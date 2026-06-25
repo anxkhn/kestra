@@ -376,6 +376,8 @@ This document should be updated as the codebase evolves. When in doubt, follow e
 
 ## UI Translations
 
+**MANDATORY — never hardcode user-facing strings.** Every label, button, tooltip, placeholder, dialog/section title, table-column header, and toast/confirm message rendered to the user MUST go through vue-i18n: `t("key")` (or `:label`/`:tooltip` bindings) in components, and `<i18n-t keypath="...">` with named slots when the string embeds markup or a component (e.g. a `<code>` fragment). Never write a literal user-facing string in a template, a `:tooltip`/`:label` attribute, or a `toast.*` call. Reuse existing generic keys (`cancel`, `delete`, `edit`, `save`, `add`, `id`, `description`, `namespace`, `revision`, …) instead of duplicating them; put feature-specific strings under one namespaced object (e.g. `"reusableInputs": { … }`). After adding keys to `en.json`, propagate them to every language (translation generation script) so the missing-keys check stays clean — a key present only in `en.json` fails the check.
+
 Translation files live in `ui/src/translations/`. There is one JSON file per language code (e.g. `de.json`, `fr.json`) plus the source `en.json`.
 
 ### Checking for missing translations
