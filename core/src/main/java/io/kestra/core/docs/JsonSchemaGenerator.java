@@ -905,9 +905,31 @@ public class JsonSchemaGenerator {
                 .filter(Predicate.not(io.kestra.core.models.Plugin::isInternal))
                 .map(typeContext::resolve)
                 .toList();
+        } else if (declaredType.getErasedType() == io.kestra.core.models.flows.Input.class) {
+            // Resolve the input subtypes from the @JsonSubTypes registry, filtering out edition-restricted ones
+            // (e.g. REUSABLE_INPUTS) so they don't appear in the open-source flow schema. EE includes them all.
+            com.fasterxml.jackson.annotation.JsonSubTypes subTypes =
+                io.kestra.core.models.flows.Input.class.getAnnotation(com.fasterxml.jackson.annotation.JsonSubTypes.class);
+            if (subTypes == null) {
+                return null;
+            }
+            return java.util.Arrays.stream(subTypes.value())
+                .map(com.fasterxml.jackson.annotation.JsonSubTypes.Type::value)
+                .filter(this::includeInputSubtype)
+                .flatMap(clz -> safelyResolveSubtype(declaredType, clz, typeContext).stream())
+                .collect(Collectors.toList());
         }
 
         return null;
+    }
+
+    /**
+     * Whether the given {@link io.kestra.core.models.flows.Input} subtype should appear in the generated flow
+     * schema. The open-source generator hides {@link io.kestra.core.models.flows.input.EeOnly}-annotated inputs;
+     * the EE generator overrides this to include them.
+     */
+    protected boolean includeInputSubtype(Class<?> subtype) {
+        return !subtype.isAnnotationPresent(io.kestra.core.models.flows.input.EeOnly.class);
     }
 
     protected static Optional<ResolvedType> safelyResolveSubtype(ResolvedType declaredType, Class<?> clz, TypeContext typeContext) {
