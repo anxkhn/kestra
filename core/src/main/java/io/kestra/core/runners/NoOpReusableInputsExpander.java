@@ -14,7 +14,7 @@ import jakarta.inject.Singleton;
 @Singleton
 public class NoOpReusableInputsExpander implements ReusableInputsExpander {
     @Override
-    public List<Input<?>> resolve(String tenantId, String flowNamespace, ReusableInputsInput input) {
+    public List<Input<?>> resolve(String tenantId, String flowNamespace, ReusableInputsInput input, List<String> parentPath) {
         throw new IllegalArgumentException(
             "Reusable inputs require Kestra Enterprise Edition (input '" + input.getId() +
                 "' references reusable inputs '" + input.getRef() + "')."
