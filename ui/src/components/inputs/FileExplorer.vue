@@ -388,6 +388,7 @@
         useFileExplorerStore,
     } from "../../stores/fileExplorer"
     import Revisions, {Revision} from "../layout/Revisions.vue"
+    import {FILES_REFRESH_CONTENT_INJECTION_KEY} from "./FlowFileEditorTab.vue"
     import Crud from "override/components/auth/Crud.vue"
     import Checkbox from "../layout/Checkbox.vue"
 
@@ -411,6 +412,7 @@
     }>()
 
     const openTab = inject(FILES_OPEN_TAB_INJECTION_KEY)
+    const refreshTabContent = inject(FILES_REFRESH_CONTENT_INJECTION_KEY, undefined)
 
     // exposed so parents (e.g. the dedicated empty state) can reuse the
     // create dialog instead of duplicating file-creation logic
@@ -656,19 +658,24 @@
     }
 
     async function restore(source: string) {
+        const path = revisionsHistory.value.path
+
         await namespacesStore.saveOrCreateFile({
             namespace: namespaceId.value,
-            path: revisionsHistory.value.path,
+            path,
             content: source,
         })
 
         toast.success(t("namespace files.revisions.restore.success"))
 
-        closeTab?.({path: revisionsHistory.value.path})
+        if (refreshTabContent) {
+            refreshTabContent.value[path] = {content: source}
+        }
+
         openTab?.({
-            name: revisionsHistory.value.path.split("/").pop()!,
-            path: revisionsHistory.value.path,
-            extension: revisionsHistory.value.path.split(".").pop()!,
+            name: path.split("/").pop()!,
+            path,
+            extension: path.split(".").pop()!,
             flow: false,
             dirty: false,
         })
