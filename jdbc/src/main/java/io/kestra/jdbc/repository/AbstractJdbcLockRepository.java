@@ -75,6 +75,9 @@ public class AbstractJdbcLockRepository extends AbstractJdbcRepository implement
 
     @Override
     public List<Lock> deleteByOwner(String owner) {
+        // The `locks` table is shared with the durable Lease store (see AbstractJdbcLeaseStore). This
+        // server-death sweep is keyed by owner = ServerInstance.INSTANCE_ID; leases are owned by execution
+        // or user ids, which never collide with a server instance id, so a lease is never swept here.
         return this.jdbcRepository.getDslContextWrapper()
             .transactionResult(configuration ->
             {

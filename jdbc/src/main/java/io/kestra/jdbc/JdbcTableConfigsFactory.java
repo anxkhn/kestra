@@ -144,6 +144,14 @@ public class JdbcTableConfigsFactory {
     }
 
     @Bean
+    @Named("leases")
+    public InstantiableJdbcTableConfig leases() {
+        // Leases reuse the physical `locks` table (no dedicated table); leases and Lock mutexes
+        // coexist there, distinguished by row content.
+        return new InstantiableJdbcTableConfig("leases", io.kestra.core.lock.Lease.class, "locks");
+    }
+
+    @Bean
     @Named("taskoutputs")
     public InstantiableJdbcTableConfig outputs() {
         return new InstantiableJdbcTableConfig("taskoutputs", TaskOutput.class, "task_outputs");

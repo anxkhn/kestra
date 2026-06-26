@@ -1383,16 +1383,20 @@ public class ExecutorService {
                     log.warn("Unable to submit asset lineage event for {} -> {}", inputAssets, outputIdentifiers, e);
                 }
 
-                // don't update output asserts if task fail
+                // don't update output assets if task fail
                 if (!taskRun.getState().isFailed()) {
-                    taskRun.getAssets().getOutputs().forEach(asset ->
-                    {
+                    // Plain for-loop (not forEach) so a checked InternalException from asyncUpsert (EE: a write
+                    // to an asset locked by a different owner) propagates out of addWorkerTaskResult; on the
+                    // worker-task-result path it reaches WorkerTaskResultMessageHandler, which fails the
+                    // execution. Fail-fast and ordering-dependent by design: if output #k is rejected, outputs
+                    // #k+1.. are not emitted, while earlier upserts and the lineage event above already were.
+                    for (var asset : taskRun.getAssets().getOutputs()) {
                         try {
                             assetService.asyncUpsert(assetUser, asset);
                         } catch (QueueException e) {
                             log.warn("Unable to submit asset upsert event for asset {}", asset.getId(), e);
                         }
-                    });
+                    }
                 }
             }
         }
