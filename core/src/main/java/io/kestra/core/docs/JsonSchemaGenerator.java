@@ -141,10 +141,60 @@ public class JsonSchemaGenerator {
             pullDocumentationAndDefaultFromAnyOf(objectNode);
             removeRequiredOnPropsWithDefaults(objectNode);
 
-            return MAPPER.convertValue(objectNode, MAP_TYPE_REFERENCE);
+            Map<String, Object> schema = MAPPER.convertValue(objectNode, MAP_TYPE_REFERENCE);
+            stripEditionRestrictedInputTypes(schema);
+            return schema;
         } catch (Exception e) {
             throw new IllegalArgumentException("Unable to generate jsonschema for '" + cls.getName() + "'", e);
         }
+    }
+
+    /**
+     * Strip edition-restricted input types (those excluded by {@link #includeInputSubtype}, i.e. {@code @EeOnly} ones
+     * such as {@code REUSABLE_INPUTS}) from the generated flow schema. The {@code Type} enum is carried in two places:
+     * the {@code enum} arrays (the {@code type} discriminator and {@code ArrayInput.itemType}) AND the polymorphic
+     * {@code anyOf}/{@code oneOf}/{@code allOf} discriminator branches ({@code {properties:{type:{const:...}}}}); both
+     * must be pruned. Open-source removes the {@code @EeOnly} types; the Enterprise override of
+     * {@code includeInputSubtype} keeps them all, so the excluded set is empty here (no-op).
+     */
+    private void stripEditionRestrictedInputTypes(Object node) {
+        Set<String> excluded = Arrays.stream(io.kestra.core.models.flows.Type.values())
+            .filter(type -> !this.includeInputSubtype(type.cls()))
+            .map(Enum::name)
+            .collect(Collectors.toSet());
+
+        if (!excluded.isEmpty()) {
+            stripEditionRestrictedInputTypes(node, excluded);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void stripEditionRestrictedInputTypes(Object node, Set<String> excluded) {
+        if (node instanceof Map<?, ?> rawMap) {
+            Map<String, Object> map = (Map<String, Object>) rawMap;
+
+            if (map.get("enum") instanceof List<?> enumValues) {
+                enumValues.removeIf(value -> excluded.contains(String.valueOf(value)));
+            }
+            for (String key : List.of("anyOf", "oneOf", "allOf")) {
+                if (map.get(key) instanceof List<?> branches) {
+                    branches.removeIf(branch -> isExcludedDiscriminatorBranch(branch, excluded));
+                }
+            }
+            map.values().forEach(value -> stripEditionRestrictedInputTypes(value, excluded));
+        } else if (node instanceof List<?> list) {
+            list.forEach(value -> stripEditionRestrictedInputTypes(value, excluded));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static boolean isExcludedDiscriminatorBranch(Object branch, Set<String> excluded) {
+        if (branch instanceof Map<?, ?> map
+            && ((Map<String, Object>) map).get("properties") instanceof Map<?, ?> properties
+            && ((Map<String, Object>) properties).get("type") instanceof Map<?, ?> type) {
+            return excluded.contains(String.valueOf(((Map<String, Object>) type).get("const")));
+        }
+        return false;
     }
 
     private void removeRequiredOnPropsWithDefaults(ObjectNode objectNode) {
