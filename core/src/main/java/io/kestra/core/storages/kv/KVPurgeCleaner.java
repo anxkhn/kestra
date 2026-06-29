@@ -50,7 +50,7 @@ public class KVPurgeCleaner {
     }
 
     private void purgeKVEntriesForTenant(String tenant) {
-        List<String> namespaces = findNamespaces(tenant);
+        List<String> namespaces = findNamespacesForTenant(tenant);
         Instant now = Instant.now();
         for (String namespace : namespaces) {
             try {
@@ -84,7 +84,7 @@ public class KVPurgeCleaner {
         }
     }
 
-    protected List<String> findNamespaces(String tenant) {
+    protected List<String> findNamespacesForTenant(String tenant) {
         return flowRepository.findDistinctNamespace(tenant);
     }
 
