@@ -1,8 +1,8 @@
 import {describe, it, expect, vi, beforeEach} from "vitest"
+import {defineComponent, ref} from "vue"
 import {mount} from "@vue/test-utils"
 import {createI18n} from "vue-i18n"
 import {createPinia} from "pinia"
-import {ref} from "vue"
 
 const SIMPLE_YAML = `
 id: my_flow
@@ -48,12 +48,14 @@ triggers:
 const EMPTY_YAML = "id: my_flow\nnamespace: company.team"
 
 const mockFlowYaml = ref(SIMPLE_YAML)
+const mockOnEdit = vi.fn()
 
 vi.mock("../../../../../src/stores/flow", () => ({
     useFlowStore: () => ({
         get flowYaml() { return mockFlowYaml.value },
         set flowYaml(v: string) { mockFlowYaml.value = v },
-        onEdit: vi.fn(),
+        flow: {id: "my_flow", namespace: "company.team"},
+        onEdit: mockOnEdit,
     }),
 }))
 
@@ -69,6 +71,18 @@ vi.mock("@kestra-io/design-system", async (importOriginal) => {
         ...actual,
         KsTaskIcon: {template: "<span data-test='task-icon' />"},
     }
+})
+
+const taskEditOpenSpy = vi.fn()
+
+const TaskEditStub = defineComponent({
+    name: "TaskEdit",
+    props: ["task", "section", "flowId", "namespace", "isHidden"],
+    emits: ["update:task", "close"],
+    setup(_, {expose}) {
+        expose({open: taskEditOpenSpy})
+    },
+    template: "<div data-test='block-editor-task-edit' />",
 })
 
 const messages = {
@@ -115,6 +129,7 @@ const globalConfig = {
                 template: "<button v-bind='$attrs'><slot /></button>",
                 inheritAttrs: false,
             },
+            TaskEdit: TaskEditStub,
         },
     },
 }
@@ -124,6 +139,8 @@ import BlockEditor from "../../../../../src/components/no-code/blocks/BlockEdito
 describe("BlockEditor", () => {
     beforeEach(() => {
         mockFlowYaml.value = SIMPLE_YAML
+        taskEditOpenSpy.mockClear()
+        mockOnEdit.mockClear()
     })
 
     describe("rendering blocks from YAML", () => {
@@ -230,9 +247,78 @@ describe("BlockEditor", () => {
             const wrapper = mount(BlockEditor, globalConfig)
             const firstCard = wrapper.find("[data-test='block-card']")
             await firstCard.trigger("click")
+            await wrapper.vm.$nextTick()
 
             // When
             await firstCard.trigger("click")
+            await wrapper.vm.$nextTick()
+
+            // Then
+            expect(firstCard.classes()).not.toContain("block-card--selected")
+        })
+
+        it("mounts the TaskEdit stub and calls open() when a block is clicked", async () => {
+            // Given
+            const wrapper = mount(BlockEditor, globalConfig)
+            const firstCard = wrapper.find("[data-test='block-card']")
+
+            // When
+            await firstCard.trigger("click")
+            await wrapper.vm.$nextTick()
+
+            // Then
+            expect(wrapper.find("[data-test='block-editor-task-edit']").exists()).toBe(true)
+            expect(taskEditOpenSpy).toHaveBeenCalledOnce()
+        })
+
+        it("passes the correct section and block data to TaskEdit", async () => {
+            // Given
+            const wrapper = mount(BlockEditor, globalConfig)
+            const firstCard = wrapper.find("[data-test='block-card']")
+
+            // When
+            await firstCard.trigger("click")
+            await wrapper.vm.$nextTick()
+
+            // Then
+            const taskEdit = wrapper.findComponent(TaskEditStub)
+            expect(taskEdit.props("section")).toBe("tasks")
+            expect((taskEdit.props("task") as Record<string, unknown>).id).toBe("log_task")
+        })
+    })
+
+    describe("edit operation", () => {
+        it("writes the updated YAML back to the store when TaskEdit emits update:task", async () => {
+            // Given
+            const wrapper = mount(BlockEditor, globalConfig)
+            const firstCard = wrapper.find("[data-test='block-card']")
+            await firstCard.trigger("click")
+            await wrapper.vm.$nextTick()
+
+            // When
+            const updatedTaskYaml = "id: log_task\ntype: io.kestra.plugin.core.log.Log\nmessage: Updated message"
+            await wrapper.findComponent(TaskEditStub).vm.$emit("update:task", updatedTaskYaml)
+            await wrapper.vm.$nextTick()
+
+            // Then
+            const {flowYamlUtils} = await import("@kestra-io/topology")
+            const parsed = flowYamlUtils.parse(mockFlowYaml.value)
+            expect(parsed.tasks).toHaveLength(2)
+            expect(parsed.tasks[0].message).toBe("Updated message")
+            expect(parsed.tasks[1].id).toBe("http_task")
+        })
+
+        it("deselects the block after a successful edit", async () => {
+            // Given
+            const wrapper = mount(BlockEditor, globalConfig)
+            const firstCard = wrapper.find("[data-test='block-card']")
+            await firstCard.trigger("click")
+            await wrapper.vm.$nextTick()
+
+            // When
+            const updatedTaskYaml = "id: log_task\ntype: io.kestra.plugin.core.log.Log\nmessage: Updated"
+            await wrapper.findComponent(TaskEditStub).vm.$emit("update:task", updatedTaskYaml)
+            await wrapper.vm.$nextTick()
 
             // Then
             expect(firstCard.classes()).not.toContain("block-card--selected")
@@ -247,6 +333,7 @@ describe("BlockEditor", () => {
 
             // When
             await deleteBtns[0].trigger("click")
+            await wrapper.vm.$nextTick()
 
             // Then
             const {flowYamlUtils} = await import("@kestra-io/topology")
@@ -263,6 +350,7 @@ describe("BlockEditor", () => {
 
             // When
             await duplicateBtns[0].trigger("click")
+            await wrapper.vm.$nextTick()
 
             // Then
             const {flowYamlUtils} = await import("@kestra-io/topology")
