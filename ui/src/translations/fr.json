@@ -85,6 +85,18 @@
         "backfill paused": "Backfill en pause",
         "backfill running": "Backfill en cours",
         "bar": "Bar",
+        "block_editor": {
+            "add_task": "Ajouter une task",
+            "card_aria_label": "Bloc {id} de type {type}",
+            "delete": "Supprimer",
+            "duplicate": "Dupliquer",
+            "empty": "Aucune task ni trigger pour l'instant. Ajoutez votre première task pour commencer.",
+            "flowable_todo": "Tasks imbriquées (édition bientôt disponible)",
+            "nested_count": "{count} tasks imbriquées",
+            "no_task_results": "Aucun type de task correspondant.",
+            "pick_task_type": "Choisir un type de task",
+            "search_task_placeholder": "Rechercher des types de task..."
+        },
         "before": "avant",
         "behavior": "Comportement",
         "blueprints": {

@@ -85,6 +85,18 @@
         "backfill paused": "Backfill paused",
         "backfill running": "Backfill running",
         "bar": "Bar",
+        "block_editor": {
+            "add_task": "Add task",
+            "card_aria_label": "Block {id} of type {type}",
+            "delete": "Delete",
+            "duplicate": "Duplicate",
+            "empty": "No tasks or triggers yet. Add your first task to get started.",
+            "flowable_todo": "Nested tasks (editing coming soon)",
+            "nested_count": "{count} nested tasks",
+            "no_task_results": "No matching task types.",
+            "pick_task_type": "Choose a task type",
+            "search_task_placeholder": "Search task types..."
+        },
         "before": "before",
         "behavior": "Behavior",
         "blueprints": {

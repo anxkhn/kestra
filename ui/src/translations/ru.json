@@ -85,6 +85,18 @@
         "backfill paused": "Заполнение приостановлено",
         "backfill running": "Запуск Backfill",
         "bar": "Бар",
+        "block_editor": {
+            "add_task": "Добавить task",
+            "card_aria_label": "Блок {id} типа {type}",
+            "delete": "Удалить",
+            "duplicate": "Дублировать",
+            "empty": "Пока нет task и trigger. Добавьте первую task для начала.",
+            "flowable_todo": "Вложенные task (редактирование скоро)",
+            "nested_count": "{count} вложенных task",
+            "no_task_results": "Подходящих типов task не найдено.",
+            "pick_task_type": "Выбрать тип task",
+            "search_task_placeholder": "Поиск типов task..."
+        },
         "before": "до",
         "behavior": "Поведение",
         "blueprints": {

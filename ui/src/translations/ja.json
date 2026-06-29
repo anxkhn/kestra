@@ -85,6 +85,18 @@
         "backfill paused": "バックフィル PAUSED",
         "backfill running": "バックフィル実行中",
         "bar": "バー",
+        "block_editor": {
+            "add_task": "taskを追加",
+            "card_aria_label": "タイプ{type}のブロック{id}",
+            "delete": "削除",
+            "duplicate": "複製",
+            "empty": "まだtaskもtriggerもありません。最初のtaskを追加して始めましょう。",
+            "flowable_todo": "ネストされたtask（編集は近日公開）",
+            "nested_count": "{count}個のネストされたtask",
+            "no_task_results": "一致するtaskタイプが見つかりません。",
+            "pick_task_type": "taskタイプを選択",
+            "search_task_placeholder": "taskタイプを検索..."
+        },
         "before": "前",
         "behavior": "動作",
         "blueprints": {

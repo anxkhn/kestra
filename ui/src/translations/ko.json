@@ -85,6 +85,18 @@
         "backfill paused": "백필 일시 중지됨",
         "backfill running": "백필 실행 중",
         "bar": "바",
+        "block_editor": {
+            "add_task": "task 추가",
+            "card_aria_label": "{type} 유형의 블록 {id}",
+            "delete": "삭제",
+            "duplicate": "복제",
+            "empty": "아직 task나 trigger가 없습니다. 첫 번째 task를 추가해 시작하세요.",
+            "flowable_todo": "중첩 task (편집 기능 곧 제공)",
+            "nested_count": "중첩 task {count}개",
+            "no_task_results": "일치하는 task 유형이 없습니다.",
+            "pick_task_type": "task 유형 선택",
+            "search_task_placeholder": "task 유형 검색..."
+        },
         "before": "이전",
         "behavior": "동작",
         "blueprints": {

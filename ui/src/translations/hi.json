@@ -85,6 +85,18 @@
         "backfill paused": "Backfill PAUSED",
         "backfill running": "Backfill चल रहा है",
         "bar": "बार",
+        "block_editor": {
+            "add_task": "task जोड़ें",
+            "card_aria_label": "ब्लॉक {id} प्रकार {type}",
+            "delete": "हटाएं",
+            "duplicate": "दोहराएं",
+            "empty": "अभी तक कोई task या trigger नहीं। शुरू करने के लिए पहली task जोड़ें।",
+            "flowable_todo": "नेस्टेड task (संपादन जल्द आएगा)",
+            "nested_count": "{count} नेस्टेड task",
+            "no_task_results": "कोई मेल खाने वाला task प्रकार नहीं मिला।",
+            "pick_task_type": "task प्रकार चुनें",
+            "search_task_placeholder": "task प्रकार खोजें..."
+        },
         "before": "पहले",
         "behavior": "व्यवहार",
         "blueprints": {

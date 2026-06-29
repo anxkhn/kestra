@@ -85,6 +85,18 @@
         "backfill paused": "Backfill PAUSED",
         "backfill running": "Backfill läuft",
         "bar": "Bar",
+        "block_editor": {
+            "add_task": "Aufgabe hinzufügen",
+            "card_aria_label": "Block {id} vom Typ {type}",
+            "delete": "Löschen",
+            "duplicate": "Duplizieren",
+            "empty": "Noch keine Aufgaben oder trigger. Fügen Sie Ihre erste Aufgabe hinzu.",
+            "flowable_todo": "Verschachtelte Aufgaben (Bearbeitung folgt)",
+            "nested_count": "{count} verschachtelte Aufgaben",
+            "no_task_results": "Keine passenden Aufgabentypen.",
+            "pick_task_type": "Aufgabentyp auswählen",
+            "search_task_placeholder": "Aufgabentypen suchen..."
+        },
         "before": "vor",
         "behavior": "Verhalten",
         "blueprints": {

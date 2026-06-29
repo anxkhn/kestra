@@ -7,8 +7,10 @@ import FileDocumentIcon from "vue-material-design-icons/FileDocument.vue"
 import MouseRightClickIcon from "vue-material-design-icons/MouseRightClick.vue"
 import FileTreeOutlineIcon from "vue-material-design-icons/FileTreeOutline.vue"
 import ShapePlusOutline from "vue-material-design-icons/ShapePlusOutline.vue"
+import ViewDashboardOutline from "vue-material-design-icons/ViewDashboardOutline.vue"
 
 import NoCode from "../../../components/no-code/NoCode.vue"
+import BlockEditor from "../../../components/no-code/blocks/BlockEditor.vue"
 import FlowFileEditorTab from "../../../components/inputs/FlowFileEditorTab.vue"
 import PluginListWrapper from "../../../components/plugins/PluginListWrapper.vue"
 import LowCodeEditorWrapper from "../../../components/inputs/LowCodeEditorWrapper.vue"
@@ -40,6 +42,14 @@ export const EDITOR_ELEMENTS: EditorElement[] = [
         },
         uid: "nocode",
         component: markRaw(NoCode),
+    },
+    {
+        button: {
+            icon: markRaw(ViewDashboardOutline),
+            label: "Blocks",
+        },
+        uid: "blocks",
+        component: markRaw(BlockEditor),
     },
     {
         button: {

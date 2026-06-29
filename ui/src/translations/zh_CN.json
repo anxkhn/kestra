@@ -85,6 +85,18 @@
         "backfill paused": "补数据已暂停",
         "backfill running": "正在运行Backfill",
         "bar": "酒吧",
+        "block_editor": {
+            "add_task": "添加task",
+            "card_aria_label": "类型为{type}的块{id}",
+            "delete": "删除",
+            "duplicate": "复制",
+            "empty": "暂无task或trigger。添加您的第一个task以开始。",
+            "flowable_todo": "嵌套task（编辑功能即将推出）",
+            "nested_count": "{count}个嵌套task",
+            "no_task_results": "未找到匹配的task类型。",
+            "pick_task_type": "选择task类型",
+            "search_task_placeholder": "搜索task类型..."
+        },
         "before": "之前",
         "behavior": "行为",
         "blueprints": {
