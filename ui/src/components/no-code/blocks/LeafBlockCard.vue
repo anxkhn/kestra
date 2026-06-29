@@ -1,7 +1,7 @@
 <template>
     <div
-        class="block-card"
-        :class="{'block-card--selected': selected}"
+        class="leaf-block-card"
+        :class="{'leaf-block-card--selected': selected}"
         role="button"
         tabindex="0"
         :aria-pressed="selected"
@@ -12,19 +12,19 @@
         @keydown.space.prevent="emit('select')"
     >
         <KsTaskIcon
-            class="block-card-icon"
+            class="leaf-block-card-icon"
             :cls="String(block.type ?? '')"
             :icons="icons"
             :onlyIcon="true"
         />
 
-        <span class="block-card-id" data-test="block-card-id">{{ block.id }}</span>
+        <span class="leaf-block-card-id" data-test="block-card-id">{{ block.id }}</span>
 
-        <span class="block-card-type" data-test="block-card-type">{{ shortType }}</span>
+        <span class="leaf-block-card-type" data-test="block-card-type">{{ shortType }}</span>
 
-        <div class="block-card-actions">
+        <div class="leaf-block-card-actions">
             <KsIconButton
-                class="block-card-action"
+                class="leaf-block-card-action"
                 :aria-label="t('block_editor.duplicate')"
                 :tooltip="t('block_editor.duplicate')"
                 data-test="block-card-duplicate"
@@ -34,7 +34,7 @@
             </KsIconButton>
 
             <KsIconButton
-                class="block-card-action block-card-action--danger"
+                class="leaf-block-card-action leaf-block-card-action--danger"
                 :aria-label="t('block_editor.delete')"
                 :tooltip="t('block_editor.delete')"
                 data-test="block-card-delete"
@@ -58,6 +58,7 @@
 
     const props = defineProps<{
         block: Record<string, unknown>
+        path: string
         selected?: boolean
         icons?: Record<string, {icon: string; flowable: boolean}>
     }>()
@@ -80,11 +81,11 @@
 </script>
 
 <style scoped lang="scss">
-    .block-card {
+    .leaf-block-card {
         display: flex;
         align-items: center;
         gap: var(--ks-spacing-3);
-        padding: var(--ks-spacing-3);
+        padding: var(--ks-spacing-2) var(--ks-spacing-3);
         border: 1px solid var(--ks-border-default);
         border-radius: var(--ks-radius-base);
         background: var(--ks-bg-surface);
@@ -106,14 +107,13 @@
             border-color: var(--ks-border-focus);
             background: var(--ks-bg-active);
         }
-
     }
 
-    .block-card-icon {
+    .leaf-block-card-icon {
         flex-shrink: 0;
     }
 
-    .block-card-id {
+    .leaf-block-card-id {
         font-size: var(--ks-font-size-sm);
         font-weight: 500;
         color: var(--ks-text-primary);
@@ -123,14 +123,14 @@
         white-space: nowrap;
     }
 
-    .block-card-type {
+    .leaf-block-card-type {
         font-size: var(--ks-font-size-xs);
         color: var(--ks-text-secondary);
         font-family: var(--ks-font-family-mono);
         flex-shrink: 0;
     }
 
-    .block-card-actions {
+    .leaf-block-card-actions {
         display: flex;
         align-items: center;
         gap: var(--ks-spacing-1);
@@ -138,13 +138,13 @@
         opacity: 0;
         transition: opacity 0.15s;
 
-        .block-card:hover &,
-        .block-card:focus-within & {
+        .leaf-block-card:hover &,
+        .leaf-block-card:focus-within & {
             opacity: 1;
         }
     }
 
-    .block-card-action {
+    .leaf-block-card-action {
         &--danger:hover {
             color: var(--ks-text-error);
         }

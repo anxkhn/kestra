@@ -18,7 +18,7 @@ tasks:
     script: echo "done"
 `
 
-const YAML_WITH_FLOWABLE = `id: my_flow
+const YAML_WITH_IF = `id: my_flow
 namespace: company.team
 tasks:
   - id: start_log
@@ -35,6 +35,46 @@ tasks:
       - id: else_log
         type: io.kestra.plugin.core.log.Log
         message: In else branch
+    errors:
+      - id: err_handler
+        type: io.kestra.plugin.core.log.Log
+        message: Error occurred
+  - id: end_log
+    type: io.kestra.plugin.core.log.Log
+    message: Done
+`
+
+const YAML_WITH_SWITCH = `id: my_flow
+namespace: company.team
+tasks:
+  - id: env_switch
+    type: io.kestra.plugin.core.flow.Switch
+    value: "{{ inputs.env }}"
+    cases:
+      prod:
+        - id: prod_log
+          type: io.kestra.plugin.core.log.Log
+          message: Production
+        - id: prod_notify
+          type: io.kestra.plugin.core.log.Log
+          message: Notify prod
+      staging:
+        - id: staging_log
+          type: io.kestra.plugin.core.log.Log
+          message: Staging
+      dev:
+        - id: dev_log
+          type: io.kestra.plugin.core.log.Log
+          message: Dev
+    defaults:
+      - id: default_log
+        type: io.kestra.plugin.core.log.Log
+        message: Default
+`
+
+const YAML_WITH_PARALLEL = `id: my_flow
+namespace: company.team
+tasks:
   - id: parallel_block
     type: io.kestra.plugin.core.flow.Parallel
     tasks:
@@ -44,9 +84,35 @@ tasks:
       - id: parallel_b
         type: io.kestra.plugin.core.log.Log
         message: Parallel B
-  - id: end_log
-    type: io.kestra.plugin.core.log.Log
-    message: Done
+      - id: parallel_c
+        type: io.kestra.plugin.core.log.Log
+        message: Parallel C
+`
+
+const YAML_DEEPLY_NESTED = `id: my_flow
+namespace: company.team
+tasks:
+  - id: outer_if
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{ inputs.check }}"
+    then:
+      - id: inner_parallel
+        type: io.kestra.plugin.core.flow.Parallel
+        tasks:
+          - id: deep_task_a
+            type: io.kestra.plugin.core.log.Log
+            message: Deep A
+          - id: deep_if
+            type: io.kestra.plugin.core.flow.If
+            condition: "{{ true }}"
+            then:
+              - id: deepest_task
+                type: io.kestra.plugin.core.log.Log
+                message: Deepest
+    else:
+      - id: fallback
+        type: io.kestra.plugin.core.log.Log
+        message: Fallback
 `
 
 const YAML_WITH_TRIGGERS = `id: my_flow
@@ -62,6 +128,22 @@ triggers:
   - id: on_webhook
     type: io.kestra.plugin.core.trigger.Webhook
     key: my-key
+`
+
+const YAML_WITH_FLOW_LEVEL_ERRORS = `id: my_flow
+namespace: company.team
+tasks:
+  - id: main_task
+    type: io.kestra.plugin.core.log.Log
+    message: Main
+errors:
+  - id: on_error
+    type: io.kestra.plugin.core.log.Log
+    message: Flow error handler
+finally:
+  - id: cleanup
+    type: io.kestra.plugin.core.log.Log
+    message: Cleanup
 `
 
 const meta: Meta<typeof BlockEditor> = {
@@ -97,14 +179,35 @@ export const Empty: Story = {
 export const WithTasks: Story = {
     render: makeRender(SIMPLE_YAML),
     parameters: {
-        docs: {description: {story: "Flow with three flat tasks."}},
+        docs: {description: {story: "Flow with three flat leaf tasks."}},
     },
 }
 
-export const WithFlowableTasks: Story = {
-    render: makeRender(YAML_WITH_FLOWABLE),
+export const WithIfFlowable: Story = {
+    render: makeRender(YAML_WITH_IF),
     parameters: {
-        docs: {description: {story: "Flow containing flowable/nested tasks. Each flowable is rendered as a card with a nested-count hint and a TODO marker — full branch editing is deferred."}},
+        docs: {description: {story: "Flow with an If task showing Then / Else / Errors lanes. The flowable renders as an expandable cluster card."}},
+    },
+}
+
+export const WithSwitchFlowable: Story = {
+    render: makeRender(YAML_WITH_SWITCH),
+    parameters: {
+        docs: {description: {story: "Flow with a Switch task. Each case key renders as a named lane. Default renders as its own lane. Use the '+ Add case' UI to create new branches."}},
+    },
+}
+
+export const WithParallelFlowable: Story = {
+    render: makeRender(YAML_WITH_PARALLEL),
+    parameters: {
+        docs: {description: {story: "Flow with a Parallel task showing a single tasks lane."}},
+    },
+}
+
+export const DeeplyNested: Story = {
+    render: makeRender(YAML_DEEPLY_NESTED),
+    parameters: {
+        docs: {description: {story: "Three levels of nesting: If > Parallel > If. Tests the depth cap (depth pill appears at level 4) and recursive lane rendering."}},
     },
 }
 
@@ -112,5 +215,12 @@ export const WithTasksAndTriggers: Story = {
     render: makeRender(YAML_WITH_TRIGGERS),
     parameters: {
         docs: {description: {story: "Flow with both tasks and triggers."}},
+    },
+}
+
+export const WithFlowLevelErrors: Story = {
+    render: makeRender(YAML_WITH_FLOW_LEVEL_ERRORS),
+    parameters: {
+        docs: {description: {story: "Flow with top-level errors and finally lanes rendered below the tasks section."}},
     },
 }

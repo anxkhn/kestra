@@ -9,16 +9,30 @@
                 </p>
 
                 <div class="block-editor-list" data-test="block-editor-task-list">
-                    <BlockCard
-                        v-for="(task, index) in parsedTasks"
-                        :key="String(task.id ?? index)"
-                        :block="task"
-                        :selected="selectedId === String(task.id)"
-                        :icons="pluginsStore.icons"
-                        @select="selectBlock('tasks', task)"
-                        @delete="onDelete('tasks', task.id)"
-                        @duplicate="onDuplicate('tasks', task.id)"
-                    />
+                    <template v-for="(task, index) in parsedTasks" :key="String(task.id ?? index)">
+                        <FlowableClusterCard
+                            v-if="isFlowable(task)"
+                            :block="task"
+                            :path="`tasks[${index}]`"
+                            :icons="pluginsStore.icons"
+                            :selectedId="selectedId"
+                            :depth="0"
+                            data-test="block-card"
+                            @select="openNestedEdit"
+                            @delete="onDeleteAtPath"
+                            @duplicate="onDuplicateAtPath"
+                            @add-at-path="openTaskPickerAtPath"
+                        />
+                        <BlockCard
+                            v-else
+                            :block="task"
+                            :selected="selectedId === String(task.id)"
+                            :icons="pluginsStore.icons"
+                            @select="selectBlock('tasks', task)"
+                            @delete="onDelete('tasks', task.id)"
+                            @duplicate="onDuplicate('tasks', task.id)"
+                        />
+                    </template>
                 </div>
 
                 <button
@@ -30,6 +44,35 @@
                     <PlusCircleOutline class="block-editor-add-icon" />
                     {{ t("block_editor.add_task") }}
                 </button>
+            </section>
+
+            <section v-if="flowLevelErrors.length > 0 || flowLevelFinally.length > 0" class="block-editor-section">
+                <BranchLane
+                    v-if="flowLevelErrors.length > 0"
+                    laneName="errors"
+                    :tasks="flowLevelErrors"
+                    parentPath="errors"
+                    :icons="pluginsStore.icons"
+                    :selectedId="selectedId"
+                    :depth="0"
+                    @select="openNestedEdit"
+                    @delete="onDeleteAtPath"
+                    @duplicate="onDuplicateAtPath"
+                    @add-at-path="openTaskPickerAtPath"
+                />
+                <BranchLane
+                    v-if="flowLevelFinally.length > 0"
+                    laneName="finally"
+                    :tasks="flowLevelFinally"
+                    parentPath="finally"
+                    :icons="pluginsStore.icons"
+                    :selectedId="selectedId"
+                    :depth="0"
+                    @select="openNestedEdit"
+                    @delete="onDeleteAtPath"
+                    @duplicate="onDuplicateAtPath"
+                    @add-at-path="openTaskPickerAtPath"
+                />
             </section>
 
             <section v-if="parsedTriggers.length > 0" class="block-editor-section">
@@ -126,8 +169,20 @@
 
     import {useFlowStore} from "../../../stores/flow"
     import {usePluginsStore} from "../../../stores/plugins"
-    import {addBlock, deleteBlock, duplicateBlock, updateBlock, type BlockSection} from "../../../utils/flowableBlockOps"
+    import {
+        addBlock,
+        addBlockAtPath,
+        deleteBlock,
+        deleteBlockAtPath,
+        duplicateBlock,
+        duplicateBlockAtPath,
+        updateBlock,
+        updateBlockAtPath,
+        type BlockSection,
+    } from "../../../utils/flowableBlockOps"
     import BlockCard from "./BlockCard.vue"
+    import BranchLane from "./BranchLane.vue"
+    import FlowableClusterCard from "./FlowableClusterCard.vue"
     import TaskEdit from "../../flows/TaskEdit.vue"
 
     const {t} = useI18n()
@@ -146,6 +201,15 @@
         }
     })
 
+    const FLOWABLE_SUFFIXES = ["If", "Switch", "Parallel", "Sequential", "ForEach", "EachSequential", "Dag", "WaitFor", "ForEachItem"]
+
+    function isFlowable(task: Record<string, unknown>): boolean {
+        const type = String(task.type ?? "")
+        const iconEntry = pluginsStore.icons?.[type]
+        if (iconEntry) return iconEntry.flowable
+        return FLOWABLE_SUFFIXES.some(suffix => type.endsWith(`.${suffix}`))
+    }
+
     const parsedTasks = computed<Record<string, unknown>[]>(() => {
         const tasks = parsedFlow.value?.tasks
         return Array.isArray(tasks) ? tasks : []
@@ -156,7 +220,22 @@
         return Array.isArray(triggers) ? triggers : []
     })
 
-    const hasContent = computed(() => parsedTasks.value.length > 0 || parsedTriggers.value.length > 0)
+    const flowLevelErrors = computed<Record<string, unknown>[]>(() => {
+        const errors = parsedFlow.value?.errors
+        return Array.isArray(errors) ? errors : []
+    })
+
+    const flowLevelFinally = computed<Record<string, unknown>[]>(() => {
+        const fin = parsedFlow.value?.finally
+        return Array.isArray(fin) ? fin : []
+    })
+
+    const hasContent = computed(() =>
+        parsedTasks.value.length > 0 ||
+        parsedTriggers.value.length > 0 ||
+        flowLevelErrors.value.length > 0 ||
+        flowLevelFinally.value.length > 0,
+    )
 
     const selectedId = ref<string | undefined>(undefined)
 
@@ -164,6 +243,7 @@
         id: string
         section: BlockSection
         data: Record<string, unknown>
+        path?: string
     }
 
     const editingBlock = ref<EditingBlock | undefined>(undefined)
@@ -185,6 +265,26 @@
         taskEditRef.value?.open()
     }
 
+    async function openNestedEdit(path: string) {
+        const blockYaml = flowYamlUtils.extractBlockWithPath({source: flowYaml.value, path})
+        if (!blockYaml) return
+
+        const parsed = flowYamlUtils.parse<Record<string, unknown>>(blockYaml)
+        if (!parsed || !parsed.id) return
+
+        const strId = String(parsed.id)
+        if (selectedId.value === strId) {
+            selectedId.value = undefined
+            editingBlock.value = undefined
+            return
+        }
+
+        selectedId.value = strId
+        editingBlock.value = {id: strId, section: "tasks", data: parsed, path}
+        await nextTick()
+        taskEditRef.value?.open()
+    }
+
     function onEditorClose() {
         selectedId.value = undefined
         editingBlock.value = undefined
@@ -202,8 +302,12 @@
 
     function onTaskEdited(newContent: string) {
         if (!editingBlock.value) return
-        const {section, id} = editingBlock.value
-        applyYaml(updateBlock(flowYaml.value, section, id, newContent))
+        const {section, id, path} = editingBlock.value
+        if (path) {
+            applyYaml(updateBlockAtPath(flowYaml.value, path, newContent))
+        } else {
+            applyYaml(updateBlock(flowYaml.value, section, id, newContent))
+        }
         editingBlock.value = undefined
         selectedId.value = undefined
     }
@@ -218,17 +322,45 @@
         applyYaml(newYaml)
     }
 
+    function onDeleteAtPath(path: string) {
+        const newYaml = deleteBlockAtPath(flowYaml.value, path)
+        const blockYaml = flowYamlUtils.extractBlockWithPath({source: flowYaml.value, path})
+        if (blockYaml) {
+            const parsed = flowYamlUtils.parse<Record<string, unknown>>(blockYaml)
+            if (parsed?.id && selectedId.value === String(parsed.id)) {
+                selectedId.value = undefined
+                editingBlock.value = undefined
+            }
+        }
+        applyYaml(newYaml)
+    }
+
     function onDuplicate(section: BlockSection, id: unknown) {
         if (typeof id !== "string") return
         applyYaml(duplicateBlock(flowYaml.value, section, id))
     }
 
+    function onDuplicateAtPath(path: string) {
+        applyYaml(duplicateBlockAtPath(flowYaml.value, path))
+    }
+
     const taskPickerVisible = ref(false)
     const taskPickerSearch = ref("")
     const taskPickerSection = ref<BlockSection>("tasks")
+    const taskPickerParentPath = ref<string | undefined>(undefined)
+    const taskPickerAfterIndex = ref<number | undefined>(undefined)
 
     function openTaskPicker(section: BlockSection) {
         taskPickerSection.value = section
+        taskPickerParentPath.value = undefined
+        taskPickerAfterIndex.value = undefined
+        taskPickerSearch.value = ""
+        taskPickerVisible.value = true
+    }
+
+    function openTaskPickerAtPath(parentPath: string, afterIndex: number) {
+        taskPickerParentPath.value = parentPath
+        taskPickerAfterIndex.value = afterIndex >= 0 ? afterIndex : undefined
         taskPickerSearch.value = ""
         taskPickerVisible.value = true
     }
@@ -258,11 +390,15 @@
         const id = label.toLowerCase().replace(/\s+/g, "_") + "_" + Date.now().toString(36)
         const block: Record<string, unknown> = {id, type: fqcn}
 
-        const lastId = parsedTasks.value.length > 0
-            ? String(parsedTasks.value[parsedTasks.value.length - 1].id ?? "")
-            : undefined
-
-        applyYaml(addBlock(flowYaml.value, taskPickerSection.value, block, lastId))
+        if (taskPickerParentPath.value !== undefined) {
+            applyYaml(addBlockAtPath(flowYaml.value, taskPickerParentPath.value, block, taskPickerAfterIndex.value))
+        } else {
+            const section = taskPickerSection.value
+            const lastId = parsedTasks.value.length > 0
+                ? String(parsedTasks.value[parsedTasks.value.length - 1].id ?? "")
+                : undefined
+            applyYaml(addBlock(flowYaml.value, section, block, lastId))
+        }
         taskPickerVisible.value = false
     }
 </script>
