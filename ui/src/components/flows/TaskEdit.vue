@@ -198,7 +198,7 @@
     }
 
     const onShow = async () => {
-        isModalOpen.value = !isModalOpen.value
+        isModalOpen.value = true
         if (props.taskId) {
             taskYaml.value = await load(props.taskId ? props.taskId : props.task?.id) ?? ""
         } else if (props.task) {

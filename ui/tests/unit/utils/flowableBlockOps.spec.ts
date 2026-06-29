@@ -262,6 +262,20 @@ triggers:
             expect(parsed.tasks[0].id).toBe("log")
         })
 
+        it("renames the block id when new content has a different id, preserving position and siblings", () => {
+            // Given
+            const renamedYaml = "id: task_renamed\ntype: io.kestra.plugin.core.log.Log\nmessage: x"
+
+            // When
+            const result = updateBlock(SIMPLE_FLOW, "tasks", "task_a", renamedYaml)
+
+            // Then
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks).toHaveLength(2)
+            expect(parsed.tasks[0].id).toBe("task_renamed")
+            expect(parsed.tasks[1].id).toBe("task_b")
+        })
+
         it("returns source unchanged when id is not found", () => {
             // Given
 
