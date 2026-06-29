@@ -32,6 +32,7 @@
 <script setup lang="ts">
     import {computed} from "vue"
     import type {RecipeState} from "../../../../composables/useFlowRecipe"
+    import {SYSTEM_FLOW_RECIPE_ID} from "../../../../utils/recipeToYaml"
     import * as Utils from "../../../../utils/utils"
 
     const props = defineProps<{
@@ -41,7 +42,7 @@
 
     const endpointUrl = computed(() => {
         const key = props.recipe.webhookKey || "{key}"
-        return `/api/v1/executions/webhook/${props.systemNamespace}/system-flow-alert/${key}`
+        return `/api/v1/executions/webhook/${props.systemNamespace}/${SYSTEM_FLOW_RECIPE_ID}/${key}`
     })
 
     const copyUrl = () => {
