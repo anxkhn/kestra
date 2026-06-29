@@ -1,26 +1,29 @@
 import {flowYamlUtils} from "@kestra-io/topology"
 
+export type ImportErrorCode = "empty" | "invalid_mapping" | "parse_error"
+
 export interface ParseImportResult {
-    error?: string
+    errorCode?: ImportErrorCode
+    parseMessage?: string
     id?: string
     namespace?: string
 }
 
 export function parseImportYaml(yaml: string): ParseImportResult {
     if (!yaml.trim()) {
-        return {error: "YAML content is empty."}
+        return {errorCode: "empty"}
     }
 
     let parsed: unknown
     try {
         parsed = flowYamlUtils.parse(yaml)
     } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : String(e)
-        return {error: msg}
+        const parseMessage = e instanceof Error ? e.message : String(e)
+        return {errorCode: "parse_error", parseMessage}
     }
 
     if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-        return {error: "Invalid flow YAML: expected a mapping."}
+        return {errorCode: "invalid_mapping"}
     }
 
     const record = parsed as Record<string, unknown>

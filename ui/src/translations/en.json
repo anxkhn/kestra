@@ -1185,7 +1185,8 @@
                 "id_label": "Flow id",
                 "id_placeholder": "my-flow",
                 "namespace_placeholder": "Select a namespace",
-                "open_editor": "Open editor"
+                "open_editor": "Open editor",
+                "namespaces_error": "Could not load namespaces. Type a namespace manually."
             },
             "blueprints": {
                 "title": "Browse blueprints",
@@ -1205,7 +1206,12 @@
                 "upload_button": "Upload .yml / .yaml",
                 "upload_tip": "Accepts .yml and .yaml files.",
                 "submit": "Import flow",
-                "read_error": "Could not read the file."
+                "read_error": "Could not read the file.",
+                "error": {
+                    "empty": "YAML content is empty.",
+                    "invalid_mapping": "Invalid flow YAML: expected a key-value mapping, not a list or scalar.",
+                    "parse_error": "Could not parse YAML."
+                }
             }
         },
         "next": "Next",

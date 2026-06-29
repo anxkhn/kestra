@@ -1185,7 +1185,8 @@
                 "id_label": "flow id",
                 "id_placeholder": "내-flow",
                 "namespace_placeholder": "namespace 선택",
-                "open_editor": "편집기 열기"
+                "open_editor": "편집기 열기",
+                "namespaces_error": "namespace를 로드할 수 없습니다. namespace를 직접 입력하세요."
             },
             "blueprints": {
                 "title": "blueprints 탐색",
@@ -1205,7 +1206,12 @@
                 "upload_button": ".yml / .yaml 업로드",
                 "upload_tip": ".yml 및 .yaml 파일을 허용합니다.",
                 "submit": "flow 가져오기",
-                "read_error": "파일을 읽을 수 없습니다."
+                "read_error": "파일을 읽을 수 없습니다.",
+                "error": {
+                    "empty": "YAML 콘텐츠가 비어 있습니다.",
+                    "invalid_mapping": "유효하지 않은 flow YAML: 목록이나 스칼라가 아닌 키-값 매핑이 필요합니다.",
+                    "parse_error": "YAML을 파싱할 수 없습니다."
+                }
             }
         },
         "next": "다음",

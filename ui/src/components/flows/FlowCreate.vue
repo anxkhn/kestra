@@ -43,7 +43,7 @@
     import resource from "../../models/resource"
     import action from "../../models/action"
     import {useOnboardingV2Store} from "../../stores/onboardingV2"
-    import {ONBOARDING_FLOW_PRESET_KEY, RECIPE_PRESET_KEY, IMPORT_PRESET_KEY} from "../../utils/storageKeys"
+    import {ONBOARDING_FLOW_PRESET_KEY, RECIPE_PRESET_KEY} from "../../utils/storageKeys"
 
     const route = useRoute()
     const {t} = useI18n()
@@ -62,7 +62,6 @@
         "onboarding",
         "onboardingPreset",
         "recipePreset",
-        "importPreset",
         "ai",
         "createTrigger",
     ]
@@ -107,7 +106,7 @@ tasks:
         return metadata.length > 0 ? `${metadata.join("\n")}\n\n${source}`.trim() : source
     }
 
-    const setupFlow = async (overrideId?: string, overrideNamespace?: string) => {
+    const setupFlow = async (overrideId?: string, overrideNamespace?: string, importYaml?: string) => {
         const blueprintId = route.query.blueprintId as string
         const blueprintSource = route.query.blueprintSource as BlueprintType
         const blueprintSourceYaml = route.query.blueprintSourceYaml as string
@@ -117,9 +116,6 @@ tasks:
             : ""
         const recipePresetFlow = route.query.recipePreset === "true"
             ? sessionStorage.getItem(RECIPE_PRESET_KEY) ?? ""
-            : ""
-        const importPresetFlow = route.query.importPreset === "true"
-            ? sessionStorage.getItem(IMPORT_PRESET_KEY) ?? ""
             : ""
         const implicitDefaultNamespace = authStore.user?.getNamespacesForAction(
             resource.FLOW,
@@ -136,12 +132,11 @@ tasks:
 
         if (route.query.copy && flowStore.flow) {
             flowYaml = flowStore.flow.source
+        } else if (importYaml) {
+            flowYaml = importYaml
         } else if (recipePresetFlow) {
             flowYaml = recipePresetFlow
             sessionStorage.removeItem(RECIPE_PRESET_KEY)
-        } else if (importPresetFlow) {
-            flowYaml = importPresetFlow
-            sessionStorage.removeItem(IMPORT_PRESET_KEY)
         } else if (onboardingPresetFlow) {
             flowYaml = onboardingPresetFlow
             sessionStorage.removeItem(ONBOARDING_FLOW_PRESET_KEY)
@@ -193,9 +188,7 @@ tasks:
     const handleImportSubmit = async ({yaml}: {yaml: string}) => {
         showLanding.value = false
         showImport.value = false
-        sessionStorage.setItem(IMPORT_PRESET_KEY, yaml)
-        await setupFlow()
-        sessionStorage.removeItem(IMPORT_PRESET_KEY)
+        await setupFlow(undefined, undefined, yaml)
     }
 
     const routeInfo = computed(() => {

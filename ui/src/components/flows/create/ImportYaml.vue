@@ -3,7 +3,6 @@
         <div class="import-header">
             <KsButton
                 type="text"
-                :aria-label="$t('new_flow_landing.import.back')"
                 class="back-btn"
                 data-test="import-yaml-back"
                 @click="emit('back')"
@@ -15,13 +14,17 @@
         </div>
 
         <KsAlert
-            v-if="parseError"
+            v-if="errorCode"
             type="error"
             :closable="false"
             class="parse-error"
             data-test="import-yaml-error"
         >
-            {{ parseError }}
+            {{ $t(`new_flow_landing.import.error.${errorCode}`) }}
+            <template v-if="parseMessage">
+                <br>
+                <KsText class="parse-detail">{{ parseMessage }}</KsText>
+            </template>
         </KsAlert>
 
         <div class="editor-section">
@@ -70,7 +73,7 @@
 <script setup lang="ts">
     import {ref} from "vue"
     import {useI18n} from "vue-i18n"
-    import {parseImportYaml} from "../../../utils/importYamlUtils"
+    import {parseImportYaml, type ImportErrorCode} from "../../../utils/importYamlUtils"
     import ArrowLeft from "vue-material-design-icons/ArrowLeft.vue"
     import TrayArrowDown from "vue-material-design-icons/TrayArrowDown.vue"
 
@@ -82,26 +85,31 @@
     const {t} = useI18n()
 
     const yamlContent = ref("")
-    const parseError = ref("")
+    const errorCode = ref<ImportErrorCode | null>(null)
+    const parseMessage = ref<string | null>(null)
 
     const handleFileChange = async (file: {raw: File}) => {
         if (!file?.raw) return
         try {
             const text = await file.raw.text()
             yamlContent.value = text
-            parseError.value = ""
+            errorCode.value = null
+            parseMessage.value = null
         } catch {
-            parseError.value = t("new_flow_landing.import.read_error")
+            errorCode.value = "parse_error"
+            parseMessage.value = t("new_flow_landing.import.read_error")
         }
     }
 
     const submit = () => {
         const result = parseImportYaml(yamlContent.value)
-        if (result.error) {
-            parseError.value = result.error
+        if (result.errorCode) {
+            errorCode.value = result.errorCode
+            parseMessage.value = result.parseMessage ?? null
             return
         }
-        parseError.value = ""
+        errorCode.value = null
+        parseMessage.value = null
         emit("submit", {yaml: yamlContent.value})
     }
 </script>
@@ -137,6 +145,15 @@
 
     .parse-error {
         margin: 0;
+    }
+
+    .parse-detail {
+        display: block;
+        font-size: var(--ks-font-size-sm);
+        color: var(--ks-text-secondary);
+        margin-top: var(--ks-spacing-1);
+        font-family: monospace;
+        word-break: break-word;
     }
 
     .editor-section {

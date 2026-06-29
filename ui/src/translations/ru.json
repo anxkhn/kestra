@@ -1185,7 +1185,8 @@
                 "id_label": "id flow",
                 "id_placeholder": "moy-flow",
                 "namespace_placeholder": "Выберите namespace",
-                "open_editor": "Открыть редактор"
+                "open_editor": "Открыть редактор",
+                "namespaces_error": "Не удалось загрузить namespace. Введите namespace вручную."
             },
             "blueprints": {
                 "title": "Просмотр blueprints",
@@ -1205,7 +1206,12 @@
                 "upload_button": "Загрузить .yml / .yaml",
                 "upload_tip": "Принимает файлы .yml и .yaml.",
                 "submit": "Импортировать flow",
-                "read_error": "Не удалось прочитать файл."
+                "read_error": "Не удалось прочитать файл.",
+                "error": {
+                    "empty": "Содержимое YAML пустое.",
+                    "invalid_mapping": "Недействительный YAML flow: ожидалось отображение ключ-значение, а не список или скаляр.",
+                    "parse_error": "Не удалось разобрать YAML."
+                }
             }
         },
         "next": "Далее",

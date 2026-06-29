@@ -1185,7 +1185,8 @@
                 "id_label": "id do flow",
                 "id_placeholder": "meu-flow",
                 "namespace_placeholder": "Selecionar namespace",
-                "open_editor": "Abrir editor"
+                "open_editor": "Abrir editor",
+                "namespaces_error": "Não foi possível carregar os namespace. Digite um namespace manualmente."
             },
             "blueprints": {
                 "title": "Explorar blueprints",
@@ -1205,7 +1206,12 @@
                 "upload_button": "Carregar .yml / .yaml",
                 "upload_tip": "Aceita arquivos .yml e .yaml.",
                 "submit": "Importar flow",
-                "read_error": "Não foi possível ler o arquivo."
+                "read_error": "Não foi possível ler o arquivo.",
+                "error": {
+                    "empty": "O conteúdo YAML está vazio.",
+                    "invalid_mapping": "YAML de flow inválido: esperado um mapeamento chave-valor, não uma lista ou escalar.",
+                    "parse_error": "Não foi possível analisar o YAML."
+                }
             }
         },
         "next": "Próximo",

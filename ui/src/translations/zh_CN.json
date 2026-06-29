@@ -1185,7 +1185,8 @@
                 "id_label": "flow id",
                 "id_placeholder": "我的-flow",
                 "namespace_placeholder": "选择 namespace",
-                "open_editor": "打开编辑器"
+                "open_editor": "打开编辑器",
+                "namespaces_error": "无法加载 namespace。请手动输入 namespace。"
             },
             "blueprints": {
                 "title": "浏览 blueprints",
@@ -1205,7 +1206,12 @@
                 "upload_button": "上传 .yml / .yaml",
                 "upload_tip": "接受 .yml 和 .yaml 文件。",
                 "submit": "导入 flow",
-                "read_error": "无法读取文件。"
+                "read_error": "无法读取文件。",
+                "error": {
+                    "empty": "YAML 内容为空。",
+                    "invalid_mapping": "无效的 flow YAML：需要键值映射，而非列表或标量。",
+                    "parse_error": "无法解析 YAML。"
+                }
             }
         },
         "next": "下一步",

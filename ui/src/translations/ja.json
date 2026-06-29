@@ -1185,7 +1185,8 @@
                 "id_label": "flow id",
                 "id_placeholder": "my-flow",
                 "namespace_placeholder": "namespaceを選択",
-                "open_editor": "エディターを開く"
+                "open_editor": "エディターを開く",
+                "namespaces_error": "namespaceを読み込めませんでした。namespaceを手動で入力してください。"
             },
             "blueprints": {
                 "title": "blueprintsを参照",
@@ -1205,7 +1206,12 @@
                 "upload_button": ".yml / .yaml をアップロード",
                 "upload_tip": ".ymlおよび.yamlファイルを受け付けます。",
                 "submit": "flowをインポート",
-                "read_error": "ファイルを読み込めませんでした。"
+                "read_error": "ファイルを読み込めませんでした。",
+                "error": {
+                    "empty": "YAMLコンテンツが空です。",
+                    "invalid_mapping": "flow YAMLが無効です: リストやスカラーではなく、キーと値のマッピングが必要です。",
+                    "parse_error": "YAMLを解析できませんでした。"
+                }
             }
         },
         "next": "次へ",

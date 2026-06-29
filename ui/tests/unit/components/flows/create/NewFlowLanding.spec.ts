@@ -2,12 +2,11 @@ import {describe, test, expect, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import {createI18n} from "vue-i18n"
 import {createPinia} from "pinia"
-
-const pushMock = vi.fn()
+import {RouterLinkStub} from "@vue/test-utils"
 
 vi.mock("vue-router", () => ({
-    useRouter: () => ({push: pushMock}),
     useRoute: () => ({params: {}, query: {}}),
+    RouterLink: RouterLinkStub,
 }))
 
 vi.mock("override/stores/misc", () => ({
@@ -29,6 +28,7 @@ const messages = {
         "new_flow_landing.blank.id_placeholder": "my-flow",
         "new_flow_landing.blank.namespace_placeholder": "Select a namespace",
         "new_flow_landing.blank.open_editor": "Open editor",
+        "new_flow_landing.blank.namespaces_error": "Could not load namespaces.",
         "new_flow_landing.blueprints.title": "Browse blueprints",
         "new_flow_landing.blueprints.subtitle": "Pick a ready-made flow from the community catalog.",
         "new_flow_landing.system.title": "Create a system flow",
@@ -36,13 +36,6 @@ const messages = {
         "new_flow_landing.system.badge": "SYSTEM",
         "new_flow_landing.import.title": "Import YAML",
         "new_flow_landing.import.subtitle": "Paste or upload an existing flow definition.",
-        "new_flow_landing.import.back": "Back",
-        "new_flow_landing.import.paste_label": "Paste YAML",
-        "new_flow_landing.import.upload_label": "Or upload a file",
-        "new_flow_landing.import.upload_button": "Upload .yml / .yaml",
-        "new_flow_landing.import.upload_tip": "Accepts .yml and .yaml files.",
-        "new_flow_landing.import.submit": "Import flow",
-        "new_flow_landing.import.read_error": "Could not read the file.",
         namespace: "namespace",
     },
 }
@@ -54,11 +47,12 @@ const globalConfig = {
             createPinia(),
         ],
         stubs: {
+            RouterLink: RouterLinkStub,
             KsText: {template: "<span><slot /></span>"},
-            KsIcon: {template: "<span />"},
             KsTag: {template: "<span><slot /></span>"},
             KsCard: {template: "<div><slot /></div>"},
-            KsAlert: {template: "<div><slot /></div>"},
+            KsAlert: {template: "<div data-stub='ks-alert'><slot /></div>"},
+            KsForm: {template: "<form><slot /></form>"},
             KsFormItem: {template: "<div><slot /></div>"},
             KsInput: {
                 template: "<input :value='modelValue' @input=\"$emit('update:modelValue', $event.target.value)\" />",
@@ -125,42 +119,68 @@ describe("NewFlowLanding", () => {
         expect(payload.namespace).toBe("company.team")
     })
 
-    test("Browse blueprints navigates to the blueprints route", async () => {
+    test("Browse blueprints is a router-link to the blueprints route", () => {
         // Given
         const wrapper = mount(NewFlowLanding, globalConfig)
-        pushMock.mockReset()
 
-        // When
-        await wrapper.find("[data-test='browse-blueprints-card']").trigger("click")
-
-        // Then
-        expect(pushMock).toHaveBeenCalledWith(expect.objectContaining({name: "blueprints"}))
+        // Then — findAllComponents returns VueWrapper, filter by data-test attribute
+        const links = wrapper.findAllComponents(RouterLinkStub)
+        const link = links.find(l => l.attributes("data-test") === "browse-blueprints-card")
+        expect(link).toBeDefined()
+        const to = link!.props("to") as {name: string}
+        expect(to.name).toBe("blueprints")
     })
 
-    test("Create a system flow navigates to the system namespace blueprints tab", async () => {
+    test("Create a system flow is a router-link pointing to the configured system namespace", () => {
         // Given
         const wrapper = mount(NewFlowLanding, globalConfig)
-        pushMock.mockReset()
-
-        // When
-        await wrapper.find("[data-test='system-flow-card']").trigger("click")
 
         // Then — must use the config value, not a hardcoded 'system' literal
-        expect(pushMock).toHaveBeenCalledWith(expect.objectContaining({
-            name: "namespaces/update",
-            params: expect.objectContaining({id: "kestra.system"}),
-            query: expect.objectContaining({tab: "blueprints"}),
-        }))
+        const links = wrapper.findAllComponents(RouterLinkStub)
+        const link = links.find(l => l.attributes("data-test") === "system-flow-card")
+        expect(link).toBeDefined()
+        const to = link!.props("to") as {name: string; params: {id: string}; query: {tab: string}}
+        expect(to.name).toBe("namespaces/update")
+        expect(to.params.id).toBe("kestra.system")
+        expect(to.query.tab).toBe("blueprints")
     })
 
-    test("Import YAML card emits import event", async () => {
+    test("Import YAML card is a button that emits import event", async () => {
         // Given
         const wrapper = mount(NewFlowLanding, globalConfig)
 
+        // Then — it is a real button
+        const btn = wrapper.find("[data-test='import-yaml-card']")
+        expect(btn.element.tagName).toBe("BUTTON")
+
         // When
-        await wrapper.find("[data-test='import-yaml-card']").trigger("click")
+        await btn.trigger("click")
 
         // Then
         expect(wrapper.emitted("import")).toBeTruthy()
+    })
+
+    test("shows namespace error alert when namespaces fail to load", async () => {
+        // Given — namespace load fails
+        const {vi: _vi} = await import("vitest")
+        const config = {
+            ...globalConfig,
+            global: {
+                ...globalConfig.global,
+                plugins: [...globalConfig.global.plugins],
+            },
+        }
+        vi.doMock("../../../../../src/composables/useNamespaces", () => ({
+            default: () => ({all: vi.fn().mockRejectedValue(new Error("network error"))}),
+            defaultNamespace: () => undefined,
+        }))
+        vi.resetModules()
+
+        const {default: NewFlowLandingFresh} = await import("../../../../../src/components/flows/create/NewFlowLanding.vue")
+        const wrapper = mount(NewFlowLandingFresh, config)
+        await new Promise(r => setTimeout(r, 10))
+
+        // Then
+        expect(wrapper.find("[data-test='namespaces-error']").exists()).toBe(true)
     })
 })

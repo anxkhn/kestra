@@ -5,7 +5,8 @@ import {createI18n} from "vue-i18n"
 vi.mock("@kestra-io/topology", () => ({
     flowYamlUtils: {
         parse: (s: string) => {
-            if (s.trim().startsWith("INVALID")) throw new Error("invalid YAML")
+            if (s.trim().startsWith("INVALID")) throw new Error("invalid YAML: unexpected token")
+            if (s.trim() === "- item") return ["item"]
             return {id: "test-flow", namespace: "company.team"}
         },
         stringify: (obj: unknown) => JSON.stringify(obj),
@@ -22,6 +23,9 @@ const messages = {
         "new_flow_landing.import.upload_tip": "Accepts .yml and .yaml files.",
         "new_flow_landing.import.submit": "Import flow",
         "new_flow_landing.import.read_error": "Could not read the file.",
+        "new_flow_landing.import.error.empty": "YAML content is empty.",
+        "new_flow_landing.import.error.invalid_mapping": "Invalid flow YAML: expected a key-value mapping.",
+        "new_flow_landing.import.error.parse_error": "Could not parse YAML.",
     },
 }
 
@@ -32,8 +36,7 @@ const globalConfig = {
         ],
         stubs: {
             KsText: {template: "<span><slot /></span>"},
-            KsIcon: {template: "<span />"},
-            KsAlert: {template: "<div class='ks-alert'><slot /></div>"},
+            KsAlert: {template: "<div class='ks-alert' data-stub='ks-alert'><slot /></div>"},
             KsButton: {
                 template: "<button :disabled='disabled' @click=\"$emit('click')\"><slot /></button>",
                 props: ["disabled"],
@@ -76,7 +79,7 @@ describe("ImportYaml", () => {
         expect((btn.element as HTMLButtonElement).disabled).toBe(true)
     })
 
-    test("emits submit with yaml on valid YAML", async () => {
+    test("emits submit with the exact YAML string on valid YAML", async () => {
         // Given
         const wrapper = mount(ImportYaml, globalConfig)
         const editor = wrapper.find("[data-test='import-yaml-editor']")
@@ -85,14 +88,15 @@ describe("ImportYaml", () => {
         // When
         await wrapper.find("[data-test='import-yaml-submit']").trigger("click")
 
-        // Then
+        // Then — no error shown, submit emitted with full YAML (not default template)
         expect(wrapper.find("[data-test='import-yaml-error']").exists()).toBe(false)
         expect(wrapper.emitted("submit")).toBeTruthy()
         const [payload] = wrapper.emitted("submit")![0] as [{yaml: string}]
         expect(payload.yaml).toBe(VALID_YAML)
+        expect(payload.yaml).not.toContain("Hello World")
     })
 
-    test("shows parse error alert on invalid YAML", async () => {
+    test("shows parse_error code alert on invalid YAML and does not emit submit", async () => {
         // Given
         const wrapper = mount(ImportYaml, globalConfig)
         const editor = wrapper.find("[data-test='import-yaml-editor']")
@@ -101,9 +105,32 @@ describe("ImportYaml", () => {
         // When
         await wrapper.find("[data-test='import-yaml-submit']").trigger("click")
 
+        // Then — error visible, submit not emitted
+        expect(wrapper.find("[data-test='import-yaml-error']").exists()).toBe(true)
+        expect(wrapper.emitted("submit")).toBeFalsy()
+    })
+
+    test("shows invalid_mapping alert when YAML is a list, not a mapping", async () => {
+        // Given
+        const wrapper = mount(ImportYaml, globalConfig)
+        await wrapper.find("[data-test='import-yaml-editor']").setValue("- item")
+
+        // When
+        await wrapper.find("[data-test='import-yaml-submit']").trigger("click")
+
         // Then
         expect(wrapper.find("[data-test='import-yaml-error']").exists()).toBe(true)
         expect(wrapper.emitted("submit")).toBeFalsy()
+    })
+
+    test("submit button stays disabled on whitespace-only content", async () => {
+        // Given
+        const wrapper = mount(ImportYaml, globalConfig)
+        await wrapper.find("[data-test='import-yaml-editor']").setValue("   ")
+
+        // Then — button is disabled; the empty-error-code path is covered by importYamlUtils.spec.ts
+        const btn = wrapper.find("[data-test='import-yaml-submit']")
+        expect((btn.element as HTMLButtonElement).disabled).toBe(true)
     })
 
     test("emits back when back button is clicked", async () => {

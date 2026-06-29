@@ -1185,7 +1185,8 @@
                 "id_label": "flow id",
                 "id_placeholder": "mera-flow",
                 "namespace_placeholder": "namespace चुनें",
-                "open_editor": "संपादक खोलें"
+                "open_editor": "संपादक खोलें",
+                "namespaces_error": "namespace लोड नहीं हो सके। namespace मैन्युअल रूप से टाइप करें।"
             },
             "blueprints": {
                 "title": "blueprints देखें",
@@ -1205,7 +1206,12 @@
                 "upload_button": ".yml / .yaml अपलोड करें",
                 "upload_tip": ".yml और .yaml फ़ाइलें स्वीकार करता है।",
                 "submit": "flow आयात करें",
-                "read_error": "फ़ाइल नहीं पढ़ी जा सकी।"
+                "read_error": "फ़ाइल नहीं पढ़ी जा सकी।",
+                "error": {
+                    "empty": "YAML सामग्री खाली है।",
+                    "invalid_mapping": "अमान्य flow YAML: key-value mapping अपेक्षित था, list या scalar नहीं।",
+                    "parse_error": "YAML को parse नहीं किया जा सका।"
+                }
             }
         },
         "next": "अगला",

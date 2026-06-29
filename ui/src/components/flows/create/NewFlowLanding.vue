@@ -17,8 +17,18 @@
                     </div>
                 </div>
 
-                <div class="primary-card-fields">
-                    <KsFormItem :label="$t('new_flow_landing.blank.id_label')" class="field-item">
+                <KsAlert
+                    v-if="namespacesError"
+                    type="error"
+                    :closable="false"
+                    class="namespaces-error"
+                    data-test="namespaces-error"
+                >
+                    {{ $t("new_flow_landing.blank.namespaces_error") }}
+                </KsAlert>
+
+                <KsForm class="primary-card-fields">
+                    <KsFormItem :label="$t('new_flow_landing.blank.id_label')">
                         <KsInput
                             v-model="flowId"
                             :placeholder="$t('new_flow_landing.blank.id_placeholder')"
@@ -26,7 +36,7 @@
                         />
                     </KsFormItem>
 
-                    <KsFormItem :label="$t('namespace')" class="field-item">
+                    <KsFormItem :label="$t('namespace')">
                         <KsSelect
                             v-model="selectedNamespace"
                             filterable
@@ -41,7 +51,7 @@
                             />
                         </KsSelect>
                     </KsFormItem>
-                </div>
+                </KsForm>
 
                 <KsButton
                     type="primary"
@@ -54,15 +64,10 @@
             </KsCard>
 
             <div class="secondary-rows">
-                <KsCard
+                <router-link
+                    :to="{name: 'blueprints', params: {tenant: route.params.tenant, kind: 'flow', tab: 'community'}}"
                     class="secondary-card"
-                    shadow="never"
-                    role="button"
-                    tabindex="0"
                     data-test="browse-blueprints-card"
-                    @click="browseBluprints"
-                    @keydown.enter="browseBluprints"
-                    @keydown.space.prevent="browseBluprints"
                 >
                     <div class="secondary-card-icon">
                         <ViewGridOutline :size="20" />
@@ -72,17 +77,12 @@
                         <KsText class="secondary-card-sub">{{ $t("new_flow_landing.blueprints.subtitle") }}</KsText>
                     </div>
                     <ChevronRight :size="16" class="secondary-card-arrow" />
-                </KsCard>
+                </router-link>
 
-                <KsCard
+                <router-link
+                    :to="{name: 'namespaces/update', params: {tenant: route.params.tenant, id: systemNamespace}, query: {tab: 'blueprints'}}"
                     class="secondary-card"
-                    shadow="never"
-                    role="button"
-                    tabindex="0"
                     data-test="system-flow-card"
-                    @click="createSystemFlow"
-                    @keydown.enter="createSystemFlow"
-                    @keydown.space.prevent="createSystemFlow"
                 >
                     <div class="secondary-card-icon">
                         <CogOutline :size="20" />
@@ -95,17 +95,13 @@
                     </div>
                     <KsTag size="small" class="system-badge">{{ $t("new_flow_landing.system.badge") }}</KsTag>
                     <ChevronRight :size="16" class="secondary-card-arrow" />
-                </KsCard>
+                </router-link>
 
-                <KsCard
+                <button
+                    type="button"
                     class="secondary-card"
-                    shadow="never"
-                    role="button"
-                    tabindex="0"
                     data-test="import-yaml-card"
                     @click="emit('import')"
-                    @keydown.enter="emit('import')"
-                    @keydown.space.prevent="emit('import')"
                 >
                     <div class="secondary-card-icon">
                         <TrayArrowDown :size="20" />
@@ -115,15 +111,15 @@
                         <KsText class="secondary-card-sub">{{ $t("new_flow_landing.import.subtitle") }}</KsText>
                     </div>
                     <ChevronRight :size="16" class="secondary-card-arrow" />
-                </KsCard>
+                </button>
             </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-    import {ref, onMounted} from "vue"
-    import {useRouter, useRoute} from "vue-router"
+    import {ref, computed, onMounted} from "vue"
+    import {useRoute} from "vue-router"
     import {useMiscStore} from "override/stores/misc"
     import useNamespaces from "../../../composables/useNamespaces"
     import Plus from "vue-material-design-icons/Plus.vue"
@@ -137,41 +133,27 @@
         import: []
     }>()
 
-    const router = useRouter()
     const route = useRoute()
     const miscStore = useMiscStore()
+
+    const systemNamespace = computed(() => miscStore.configs?.systemNamespace ?? "system")
 
     const flowId = ref("")
     const selectedNamespace = ref("")
     const namespaceOptions = ref<string[]>([])
+    const namespacesError = ref(false)
 
     onMounted(async () => {
         try {
             const ns = await useNamespaces(500).all()
             namespaceOptions.value = ns.map(n => n.id)
         } catch {
-            namespaceOptions.value = []
+            namespacesError.value = true
         }
     })
 
     const openEditor = () => {
         emit("proceed", {id: flowId.value, namespace: selectedNamespace.value})
-    }
-
-    const browseBluprints = () => {
-        router.push({
-            name: "blueprints",
-            params: {tenant: route.params.tenant, kind: "flow", tab: "community"},
-        })
-    }
-
-    const createSystemFlow = () => {
-        const systemNs = miscStore.configs?.systemNamespace ?? "system"
-        router.push({
-            name: "namespaces/update",
-            params: {tenant: route.params.tenant, id: systemNs},
-            query: {tab: "blueprints"},
-        })
     }
 </script>
 
@@ -228,8 +210,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 2.5rem;
-        height: 2.5rem;
+        width: var(--ks-spacing-7);
+        height: var(--ks-spacing-7);
         border-radius: var(--ks-radius-base);
         background-color: var(--ks-bg-badge);
         flex-shrink: 0;
@@ -253,10 +235,11 @@
         display: flex;
         flex-direction: column;
         gap: var(--ks-spacing-3);
+        margin-bottom: 0;
     }
 
-    .field-item {
-        margin-bottom: 0;
+    .namespaces-error {
+        margin: 0;
     }
 
     .secondary-rows {
@@ -274,7 +257,12 @@
         border-radius: var(--ks-radius-base);
         background-color: var(--ks-bg-surface);
         cursor: pointer;
-        transition: border-color 0.15s, background-color 0.15s;
+        text-decoration: none;
+        color: inherit;
+        transition: border-color var(--ks-duration-fast) var(--ks-ease-standard),
+            background-color var(--ks-duration-fast) var(--ks-ease-standard);
+        width: 100%;
+        text-align: left;
 
         &:hover {
             border-color: var(--ks-border-strong);
@@ -291,8 +279,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 2rem;
-        height: 2rem;
+        width: var(--ks-spacing-6);
+        height: var(--ks-spacing-6);
         border-radius: var(--ks-radius-sm);
         background-color: var(--ks-bg-badge);
         flex-shrink: 0;

@@ -1185,7 +1185,8 @@
                 "id_label": "id flow",
                 "id_placeholder": "moj-flow",
                 "namespace_placeholder": "Wybierz namespace",
-                "open_editor": "Otwórz edytor"
+                "open_editor": "Otwórz edytor",
+                "namespaces_error": "Nie można załadować namespace. Wpisz namespace ręcznie."
             },
             "blueprints": {
                 "title": "Przeglądaj blueprints",
@@ -1205,7 +1206,12 @@
                 "upload_button": "Prześlij .yml / .yaml",
                 "upload_tip": "Akceptuje pliki .yml i .yaml.",
                 "submit": "Importuj flow",
-                "read_error": "Nie można odczytać pliku."
+                "read_error": "Nie można odczytać pliku.",
+                "error": {
+                    "empty": "Zawartość YAML jest pusta.",
+                    "invalid_mapping": "Nieprawidłowy YAML flow: oczekiwano mapowania klucz-wartość, nie listy ani skalaru.",
+                    "parse_error": "Nie można przetworzyć YAML."
+                }
             }
         },
         "next": "Dalej",
