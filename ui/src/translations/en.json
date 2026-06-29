@@ -1807,6 +1807,15 @@
     "revision": "Revision",
     "revision deleted": "Revision {revision} has been deleted successfully",
     "revisions": "Revisions",
+    "revision_diff": {
+      "structured": "Structured",
+      "text": "Text",
+      "added": "Added",
+      "removed": "Removed",
+      "modified": "Modified",
+      "no_changes": "No changes between these two revisions.",
+      "unchanged_count": "{count} unchanged block(s) not shown."
+    },
     "row count": "Row count",
     "run task in playground": "Run task in playground",
     "run timeline": "Run Timeline",

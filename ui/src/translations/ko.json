@@ -1807,6 +1807,15 @@
     "revision": "수정본",
     "revision deleted": "{revision} 리비전이 성공적으로 삭제되었습니다.",
     "revisions": "수정본들",
+    "revision_diff": {
+      "structured": "구조화",
+      "text": "텍스트",
+      "added": "추가됨",
+      "removed": "제거됨",
+      "modified": "수정됨",
+      "no_changes": "이 두 revision 사이에 변경 사항이 없습니다.",
+      "unchanged_count": "{count}개의 변경되지 않은 블록이 표시되지 않습니다."
+    },
     "row count": "행 수",
     "run task in playground": "플레이그라운드에서 task 실행",
     "run timeline": "실행 타임라인",

@@ -1807,6 +1807,15 @@
     "revision": "Редакция",
     "revision deleted": "Ревизия {revision} была успешно удалена",
     "revisions": "Редакции",
+    "revision_diff": {
+      "structured": "Структурированный",
+      "text": "Текст",
+      "added": "Добавлено",
+      "removed": "Удалено",
+      "modified": "Изменено",
+      "no_changes": "Нет изменений между этими двумя редакциями.",
+      "unchanged_count": "{count} неизменённых блок(ов) не отображается."
+    },
     "row count": "Количество строк",
     "run task in playground": "Запустить task в playground",
     "run timeline": "Хронология выполнения",

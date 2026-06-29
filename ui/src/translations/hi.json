@@ -1807,6 +1807,15 @@
     "revision": "संशोधन",
     "revision deleted": "समीक्षा {revision} को सफलतापूर्वक हटा दिया गया है",
     "revisions": "पुनरीक्षण",
+    "revision_diff": {
+      "structured": "संरचित",
+      "text": "पाठ",
+      "added": "जोड़ा गया",
+      "removed": "हटाया गया",
+      "modified": "संशोधित",
+      "no_changes": "इन दो पुनरीक्षणों के बीच कोई परिवर्तन नहीं।",
+      "unchanged_count": "{count} अपरिवर्तित ब्लॉक नहीं दिखाया गया।"
+    },
     "row count": "पंक्ति संख्या",
     "run task in playground": "प्लेग्राउंड में task चलाएं",
     "run timeline": "रन टाइमलाइन",

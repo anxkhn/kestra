@@ -1807,6 +1807,15 @@
     "revision": "リビジョン",
     "revision deleted": "リビジョン{revision}が正常に削除されました",
     "revisions": "リビジョン",
+    "revision_diff": {
+      "structured": "構造化",
+      "text": "テキスト",
+      "added": "追加",
+      "removed": "削除",
+      "modified": "変更",
+      "no_changes": "この2つのリビジョン間に変更はありません。",
+      "unchanged_count": "{count}個の未変更ブロックは表示されていません。"
+    },
     "row count": "行数",
     "run task in playground": "プレイグラウンドでタスクを実行",
     "run timeline": "実行タイムライン",

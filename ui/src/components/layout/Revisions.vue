@@ -1,7 +1,8 @@
 <template>
     <div class="revision" v-if="revisions && revisions.length > 1">
-        <div class="d-flex justify-content-end">
-            <KsSelect v-model="sideBySide" class="mb-3 display-select">
+        <div class="revision-controls-row mb-3">
+            <KsSegmented v-model="diffMode" :options="diffModeOptions" />
+            <KsSelect v-if="diffMode === 'text'" v-model="sideBySide" class="display-select">
                 <KsOption
                     v-for="item in displayTypes"
                     :key="String(item.value)"
@@ -10,6 +11,7 @@
                 />
             </KsSelect>
         </div>
+
         <div class="revision-grid mb-2">
             <div class="revision-grid-col" v-if="revisionLeftIndex !== undefined">
                 <div class="revision-select-row">
@@ -89,17 +91,25 @@
             </div>
         </div>
 
-        <KsEditor
-            v-bind="editorBindings"
-            class="mt-1"
-            v-if="revisionLeftText !== undefined && revisionRightText !== undefined && !isLoadingRevisions"
-            :options="{diffSideBySide: sideBySide}"
-            :modelValue="revisionRightText"
-            :original="revisionLeftText"
-            readOnly
-            :lang
-            :showDoc="false"
-        />
+        <template v-if="revisionLeftText !== undefined && revisionRightText !== undefined && !isLoadingRevisions">
+            <RevisionStructuredDiff
+                v-if="diffMode === 'structured'"
+                :leftSource="revisionLeftText"
+                :rightSource="revisionRightText"
+                class="mt-1 revision-structured"
+            />
+            <KsEditor
+                v-else
+                v-bind="editorBindings"
+                class="mt-1"
+                :options="{diffSideBySide: sideBySide}"
+                :modelValue="revisionRightText"
+                :original="revisionLeftText"
+                readOnly
+                :lang
+                :showDoc="false"
+            />
+        </template>
 
         <div v-if="isLoadingRevisions" class="text-center p-4">
             <span class="ml-2">Loading revisions...</span>
@@ -120,12 +130,13 @@
     import History from "vue-material-design-icons/History.vue"
     import Restore from "vue-material-design-icons/Restore.vue"
     import TrashCanOutline from "vue-material-design-icons/TrashCanOutline.vue"
-    import {KsEditor} from "@kestra-io/design-system"
+    import {KsEditor, KsSegmented} from "@kestra-io/design-system"
     import {useEditorBindings} from "../../composables/useEditorBindings"
     import moment from "moment"
 
     import {useToast} from "../../utils/toast"
     import {useFlowStore} from "../../stores/flow"
+    import RevisionStructuredDiff from "./RevisionStructuredDiff.vue"
 
     const flowStore = useFlowStore()
 
@@ -148,9 +159,14 @@
     const revisionRightText = ref()
     const sideBySide = ref(true)
     const isLoadingRevisions = ref(false)
+    const diffMode = ref<"structured" | "text">("text")
     const displayTypes = [
         {value: true, text: t("side-by-side")},
         {value: false, text: t("line-by-line")},
+    ]
+    const diffModeOptions = [
+        {value: "structured", label: t("revision_diff.structured")},
+        {value: "text", label: t("revision_diff.text")},
     ]
 
     const emit = defineEmits<{
@@ -363,9 +379,22 @@
         height: 100%;
     }
 
+    .revision-controls-row {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: var(--ks-spacing-3);
+    }
+
     .ks-editor {
         flex: 1;
         padding-bottom: 1rem;
+    }
+
+    .revision-structured {
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: var(--ks-spacing-4);
     }
 
     .revision-grid {

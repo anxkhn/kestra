@@ -1807,6 +1807,15 @@
     "revision": "Wersja",
     "revision deleted": "Revision {revision} został pomyślnie usunięty",
     "revisions": "Wersje",
+    "revision_diff": {
+      "structured": "Strukturalny",
+      "text": "Tekst",
+      "added": "Dodano",
+      "removed": "Usunięto",
+      "modified": "Zmodyfikowano",
+      "no_changes": "Brak zmian między tymi dwiema wersjami.",
+      "unchanged_count": "{count} niezmieniony(-ch) blok(ów) nie jest wyświetlany."
+    },
     "row count": "Liczba wierszy",
     "run task in playground": "Uruchom task w playgroundzie",
     "run timeline": "Uruchom oś czasu",

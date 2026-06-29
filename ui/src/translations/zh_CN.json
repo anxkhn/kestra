@@ -1807,6 +1807,15 @@
     "revision": "修订版",
     "revision deleted": "修订版 {revision} 已成功删除",
     "revisions": "修订版",
+    "revision_diff": {
+      "structured": "结构化",
+      "text": "文本",
+      "added": "已添加",
+      "removed": "已删除",
+      "modified": "已修改",
+      "no_changes": "这两个修订版之间没有变化。",
+      "unchanged_count": "{count} 个未更改的块未显示。"
+    },
     "row count": "行数",
     "run task in playground": "在playground中运行task",
     "run timeline": "运行时间线",
