@@ -874,6 +874,8 @@
     "flow source not found": "Flow source नहीं मिला",
     "flow-dependencies": "निर्भरता",
     "flow-no-dependencies": "आपके flow की कोई dependencies नहीं हैं।",
+    "flow_description": "Flow विवरण",
+    "flow_no_description": "कोई विवरण नहीं। अपने flow YAML में विवरण जोड़ें।",
     "flow_editor_stats": {
       "apps": {
         "suffix": "ऐप(s)",
@@ -2101,6 +2103,8 @@
       "preview_error": "flow स्रोत लोड करने में विफल"
     },
     "specific task": "विशिष्ट task",
+    "split_horizontal": "क्षैतिज रूप से विभाजित करें",
+    "split_vertical": "लंबवत रूप से विभाजित करें",
     "start date": "प्रारंभ तिथि",
     "start datetime": "प्रारंभ दिनांक और समय",
     "started date": "प्रारंभ तिथि",

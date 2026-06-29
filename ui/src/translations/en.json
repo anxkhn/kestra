@@ -874,6 +874,8 @@
     "flow source not found": "Flow source not found",
     "flow-dependencies": "dependencies",
     "flow-no-dependencies": "Your flow does not have any dependencies",
+    "flow_description": "Flow Description",
+    "flow_no_description": "No description. Add a description to your flow YAML to document what it does.",
     "flow_editor_stats": {
       "revisions": {
         "suffix": "Revision(s)",
@@ -2101,6 +2103,8 @@
       "preview_error": "Failed to load flow source"
     },
     "specific task": "Specific task",
+    "split_horizontal": "Split horizontally",
+    "split_vertical": "Split vertically",
     "start date": "Start date",
     "start datetime": "Start datetime",
     "started date": "Started date",

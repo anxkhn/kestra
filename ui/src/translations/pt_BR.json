@@ -874,6 +874,8 @@
     "flow source not found": "Fonte do flow não encontrada",
     "flow-dependencies": "dependências",
     "flow-no-dependencies": "Seu flow não possui dependências",
+    "flow_description": "Descrição do flow",
+    "flow_no_description": "Sem descrição. Adicione uma descrição ao YAML do seu flow para documentá-lo.",
     "flow_editor_stats": {
       "apps": {
         "suffix": "Aplicativo(s)",
@@ -2101,6 +2103,8 @@
       "preview_error": "Falha ao carregar o código-fonte do flow"
     },
     "specific task": "Task específica",
+    "split_horizontal": "Dividir horizontalmente",
+    "split_vertical": "Dividir verticalmente",
     "start date": "Data de início",
     "start datetime": "Data e hora de início",
     "started date": "Data de início",

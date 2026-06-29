@@ -1,10 +1,18 @@
 <template>
     <div class="main-editor">
         <MultiPanelEditorTabs :tabs="editorElements" @update:tabs="setTabValue" :openTabs="openTabs">
-            <slot name="actions" />
+            <div class="tabs-actions">
+                <KsTooltip :content="splitOrientation === 'vertical' ? t('split_horizontal') : t('split_vertical')" placement="bottom">
+                    <button class="orientation-toggle" :aria-label="splitOrientation === 'vertical' ? t('split_horizontal') : t('split_vertical')" @click="toggleOrientation">
+                        <ViewSplitVertical v-if="splitOrientation === 'vertical'" />
+                        <ViewSplitHorizontal v-else />
+                    </button>
+                </KsTooltip>
+                <slot name="actions" />
+            </div>
         </MultiPanelEditorTabs>
         <div class="editor-wrapper">
-            <KsSplitter class="default-theme editor-panels" layout="vertical">
+            <KsSplitter class="default-theme editor-panels" :layout="splitOrientation">
                 <KsSplitterPanel>
                     <MultiPanelTabs v-model="panels" @remove-tab="onRemoveTab" />
                 </KsSplitterPanel>
@@ -19,10 +27,22 @@
 
 <script lang="ts" setup>
     import {computed, useSlots} from "vue"
+    import {useStorage} from "@vueuse/core"
+    import {useI18n} from "vue-i18n"
+    import ViewSplitVertical from "vue-material-design-icons/ViewSplitVertical.vue"
+    import ViewSplitHorizontal from "vue-material-design-icons/ViewSplitHorizontal.vue"
     import MultiPanelEditorTabs from "./MultiPanelEditorTabs.vue"
     import MultiPanelTabs from "./MultiPanelTabs.vue"
     import {EditorElement, Panel} from "../utils/multiPanelTypes"
     import {useStoredPanels} from "../composables/useStoredPanels"
+
+    const {t} = useI18n()
+
+    const splitOrientation = useStorage<"vertical" | "horizontal">("editor-split-orientation", "vertical")
+
+    function toggleOrientation() {
+        splitOrientation.value = splitOrientation.value === "vertical" ? "horizontal" : "vertical"
+    }
 
     const props = withDefaults(defineProps<{
         editorElements: EditorElement[];
@@ -118,6 +138,7 @@
         focusTab,
         setTabValue,
         saveState,
+        splitOrientation,
     })
 </script>
 
@@ -130,6 +151,32 @@
         .editor-wrapper {
             position: relative;
             height: 100%;
+        }
+    }
+
+    .tabs-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--ks-spacing-1);
+        padding: var(--ks-spacing-2) var(--ks-spacing-4);
+        flex-shrink: 0;
+    }
+
+    .orientation-toggle {
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: var(--ks-radius-base);
+        padding: var(--ks-spacing-2);
+        color: var(--ks-text-secondary);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        aspect-ratio: 1 / 1;
+        transition: all 0.2s ease-in-out;
+
+        &:hover {
+            background-color: var(--ks-bg-base);
         }
     }
 

@@ -874,6 +874,8 @@
     "flow source not found": "Источник flow не найден",
     "flow-dependencies": "зависимости",
     "flow-no-dependencies": "Ваш flow не имеет зависимостей",
+    "flow_description": "Описание flow",
+    "flow_no_description": "Нет описания. Добавьте описание в YAML вашего flow для документирования.",
     "flow_editor_stats": {
       "apps": {
         "suffix": "Приложение(я)",
@@ -2101,6 +2103,8 @@
       "preview_error": "Не удалось загрузить исходный код flow"
     },
     "specific task": "Конкретная задача",
+    "split_horizontal": "Разделить горизонтально",
+    "split_vertical": "Разделить вертикально",
     "start date": "Дата начала",
     "start datetime": "Дата и время начала",
     "started date": "Дата начала",

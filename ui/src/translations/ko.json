@@ -874,6 +874,8 @@
     "flow source not found": "Flow source를 찾을 수 없음",
     "flow-dependencies": "종속성",
     "flow-no-dependencies": "귀하의 flow에는 종속성이 없습니다.",
+    "flow_description": "Flow 설명",
+    "flow_no_description": "설명 없음. flow YAML에 설명을 추가하여 문서화하세요.",
     "flow_editor_stats": {
       "apps": {
         "suffix": "앱(s)",
@@ -2101,6 +2103,8 @@
       "preview_error": "flow 소스를 불러오지 못했습니다"
     },
     "specific task": "특정 task",
+    "split_horizontal": "수평으로 분할",
+    "split_vertical": "수직으로 분할",
     "start date": "시작 날짜",
     "start datetime": "시작 날짜 및 시간",
     "started date": "시작 날짜",
