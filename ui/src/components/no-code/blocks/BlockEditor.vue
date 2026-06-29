@@ -1,5 +1,10 @@
 <template>
-    <div class="block-editor" data-test="block-editor">
+    <div
+        class="block-editor"
+        data-test="block-editor"
+        tabindex="-1"
+        @keydown="onEditorKeydown"
+    >
         <KsEmpty v-if="!hasContent" :description="t('block_editor.empty')" />
 
         <template v-else>
@@ -125,21 +130,33 @@
             v-model="taskPickerVisible"
             :title="t('block_editor.pick_task_type')"
         >
-            <div class="block-editor-picker">
+            <div class="block-editor-picker" @keydown="onPickerKeydown">
                 <KsInput
                     v-model="taskPickerSearch"
                     :placeholder="t('block_editor.search_task_placeholder')"
+                    :aria-label="t('block_editor.search_task_placeholder')"
                     clearable
+                    autofocus
                     data-test="block-editor-picker-search"
                 />
 
-                <div class="block-editor-picker-list" data-test="block-editor-picker-list">
+                <div
+                    v-ks-loading="pluginsLoading"
+                    class="block-editor-picker-list"
+                    :class="{'block-editor-picker-list--loading': pluginsLoading}"
+                    data-test="block-editor-picker-list"
+                    role="listbox"
+                >
                     <button
-                        v-for="type in filteredCommonTypes"
+                        v-for="(type, idx) in filteredCommonTypes"
                         :key="type.fqcn"
                         class="block-editor-picker-row"
+                        :class="{'block-editor-picker-row--focused': pickerFocusedIndex === idx}"
                         type="button"
-                        @click="insertTask(type.fqcn, type.label)"
+                        role="option"
+                        :aria-selected="pickerFocusedIndex === idx"
+                        @click="insertTask(type.fqcn)"
+                        @mouseenter="pickerFocusedIndex = idx"
                     >
                         <KsTaskIcon
                             :cls="type.fqcn"
@@ -160,23 +177,26 @@
 </template>
 
 <script setup lang="ts">
-    import {computed, nextTick, ref} from "vue"
+    import {computed, nextTick, ref, watch} from "vue"
     import {useI18n} from "vue-i18n"
     import PlusCircleOutline from "vue-material-design-icons/PlusCircleOutline.vue"
 
-    import {KsTaskIcon} from "@kestra-io/design-system"
+    import {KsTaskIcon, vKsLoading} from "@kestra-io/design-system"
     import {flowYamlUtils} from "@kestra-io/topology"
 
     import {useFlowStore} from "../../../stores/flow"
     import {usePluginsStore} from "../../../stores/plugins"
+    import {isEntryAPluginElementPredicate, type PluginElement} from "../../../utils/pluginUtils"
     import {
         addBlock,
         addBlockAtPath,
+        buildMinimalTask,
         deleteBlock,
         deleteBlockAtPath,
         duplicateBlock,
         duplicateBlockAtPath,
         isFlowableType,
+        moveBlockAtPath,
         updateBlock,
         updateBlockAtPath,
         type BlockSection,
@@ -346,46 +366,96 @@
     const taskPickerSection = ref<BlockSection>("tasks")
     const taskPickerParentPath = ref<string | undefined>(undefined)
     const taskPickerAfterIndex = ref<number | undefined>(undefined)
+    const pluginsLoading = ref(false)
+    const pickerFocusedIndex = ref(-1)
 
     function openTaskPicker(section: BlockSection) {
         taskPickerSection.value = section
         taskPickerParentPath.value = undefined
         taskPickerAfterIndex.value = undefined
         taskPickerSearch.value = ""
+        pickerFocusedIndex.value = -1
         taskPickerVisible.value = true
+        ensurePluginData()
     }
 
     function openTaskPickerAtPath(parentPath: string, afterIndex: number) {
         taskPickerParentPath.value = parentPath
         taskPickerAfterIndex.value = afterIndex >= 0 ? afterIndex : undefined
         taskPickerSearch.value = ""
+        pickerFocusedIndex.value = -1
         taskPickerVisible.value = true
+        ensurePluginData()
     }
 
-    const COMMON_TASK_TYPES = [
-        {fqcn: "io.kestra.plugin.core.log.Log", label: "Log"},
-        {fqcn: "io.kestra.plugin.core.http.Request", label: "HTTP Request"},
-        {fqcn: "io.kestra.plugin.core.runner.Script", label: "Script"},
-        {fqcn: "io.kestra.plugin.core.flow.Subflow", label: "Subflow"},
-        {fqcn: "io.kestra.plugin.core.flow.If", label: "If"},
-        {fqcn: "io.kestra.plugin.core.flow.Switch", label: "Switch"},
-        {fqcn: "io.kestra.plugin.core.flow.EachSequential", label: "For Each"},
-        {fqcn: "io.kestra.plugin.core.flow.Parallel", label: "Parallel"},
-        {fqcn: "io.kestra.plugin.core.flow.Sequential", label: "Sequential"},
-        {fqcn: "io.kestra.plugin.core.flow.Dag", label: "DAG"},
-    ]
+    function ensurePluginData() {
+        if (pluginsStore.plugins) return
+        pluginsLoading.value = true
+        pluginsStore.ensurePlugins().finally(() => {
+            pluginsLoading.value = false
+        })
+    }
 
-    const filteredCommonTypes = computed(() => {
+    interface PickerEntry {
+        fqcn: string
+        label: string
+        group: string
+    }
+
+    const allPickerEntries = computed<PickerEntry[]>(() => {
+        if (!pluginsStore.plugins) return []
+        const entries: PickerEntry[] = []
+        for (const plugin of pluginsStore.plugins) {
+            for (const [key, value] of Object.entries(plugin)) {
+                if (!isEntryAPluginElementPredicate(key, value)) continue
+                for (const el of value as PluginElement[]) {
+                    if (el.deprecated) continue
+                    const parts = el.cls.split(".")
+                    entries.push({
+                        fqcn: el.cls,
+                        label: el.title ?? parts[parts.length - 1] ?? el.cls,
+                        group: plugin.title ?? plugin.name ?? "",
+                    })
+                }
+            }
+        }
+        return entries
+    })
+
+    const filteredCommonTypes = computed<PickerEntry[]>(() => {
         const search = taskPickerSearch.value.trim().toLowerCase()
-        if (!search) return COMMON_TASK_TYPES
-        return COMMON_TASK_TYPES.filter(
-            entry => entry.label.toLowerCase().includes(search) || entry.fqcn.toLowerCase().includes(search),
+        const source = allPickerEntries.value
+        if (!search) return source
+        return source.filter(
+            entry =>
+                entry.label.toLowerCase().includes(search) ||
+                entry.fqcn.toLowerCase().includes(search) ||
+                entry.group.toLowerCase().includes(search),
         )
     })
 
-    function insertTask(fqcn: string, label: string) {
-        const id = label.toLowerCase().replace(/\s+/g, "_") + "_" + Date.now().toString(36)
-        const block: Record<string, unknown> = {id, type: fqcn}
+    watch(filteredCommonTypes, () => {
+        pickerFocusedIndex.value = -1
+    })
+
+    function onPickerKeydown(event: KeyboardEvent) {
+        const list = filteredCommonTypes.value
+        if (list.length === 0) return
+        if (event.key === "ArrowDown") {
+            event.preventDefault()
+            pickerFocusedIndex.value = Math.min(pickerFocusedIndex.value + 1, list.length - 1)
+        } else if (event.key === "ArrowUp") {
+            event.preventDefault()
+            pickerFocusedIndex.value = Math.max(pickerFocusedIndex.value - 1, 0)
+        } else if (event.key === "Enter" && pickerFocusedIndex.value >= 0) {
+            event.preventDefault()
+            const entry = list[pickerFocusedIndex.value]
+            if (entry) insertTask(entry.fqcn)
+        }
+    }
+
+    function insertTask(fqcn: string) {
+        const block = buildMinimalTask(fqcn)
 
         if (taskPickerParentPath.value !== undefined) {
             applyYaml(addBlockAtPath(flowYaml.value, taskPickerParentPath.value, block, taskPickerAfterIndex.value))
@@ -397,6 +467,52 @@
             applyYaml(addBlock(flowYaml.value, section, block, lastId))
         }
         taskPickerVisible.value = false
+    }
+
+    function onEditorKeydown(event: KeyboardEvent) {
+        if (!selectedId.value) return
+        const target = event.target as HTMLElement
+        if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return
+
+        if (event.key === "Delete" || event.key === "Backspace") {
+            event.preventDefault()
+            deleteSelected()
+        } else if (event.altKey && event.key === "ArrowUp") {
+            event.preventDefault()
+            moveSelected("up")
+        } else if (event.altKey && event.key === "ArrowDown") {
+            event.preventDefault()
+            moveSelected("down")
+        }
+    }
+
+    function deleteSelected() {
+        if (!selectedId.value) return
+        const id = selectedId.value
+        if (editingBlock.value?.path) {
+            onDeleteAtPath(editingBlock.value.path)
+        } else {
+            const section = editingBlock.value?.section ?? "tasks"
+            onDelete(section, id)
+        }
+    }
+
+    function moveSelected(direction: "up" | "down") {
+        if (!selectedId.value || !editingBlock.value) return
+        const path = editingBlock.value.path
+        if (!path) {
+            const section = editingBlock.value.section
+            const list = section === "tasks" ? parsedTasks.value
+                : section === "errors" ? flowLevelErrors.value
+                    : section === "finally" ? flowLevelFinally.value
+                        : parsedTriggers.value
+            const idx = list.findIndex(item => String(item.id) === selectedId.value)
+            if (idx < 0) return
+            const syntheticPath = `${section}[${idx}]`
+            applyYaml(moveBlockAtPath(flowYaml.value, syntheticPath, direction))
+        } else {
+            applyYaml(moveBlockAtPath(flowYaml.value, path, direction))
+        }
     }
 </script>
 
@@ -466,11 +582,16 @@
     }
 
     .block-editor-picker-list {
+        position: relative;
         display: flex;
         flex-direction: column;
         gap: var(--ks-spacing-1);
         max-height: 320px;
         overflow-y: auto;
+
+        &--loading {
+            min-height: var(--ks-spacing-10);
+        }
     }
 
     .block-editor-picker-row {
@@ -485,7 +606,8 @@
         text-align: left;
         transition: background-color 0.15s;
 
-        &:hover {
+        &:hover,
+        &--focused {
             background: var(--ks-bg-hover);
         }
     }

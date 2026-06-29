@@ -88,9 +88,24 @@ vi.mock("../../../../../src/stores/flow", () => ({
     }),
 }))
 
+const mockPlugins = [
+    {
+        name: "core",
+        title: "Core",
+        group: "io.kestra.plugin.core",
+        tasks: [
+            {cls: "io.kestra.plugin.core.log.Log", title: "Log"},
+            {cls: "io.kestra.plugin.core.flow.If", title: "If"},
+        ],
+    },
+]
+const mockEnsurePlugins = vi.fn().mockResolvedValue(mockPlugins)
+
 vi.mock("../../../../../src/stores/plugins", () => ({
     usePluginsStore: () => ({
         icons: {},
+        plugins: mockPlugins,
+        ensurePlugins: mockEnsurePlugins,
     }),
 }))
 
@@ -191,6 +206,9 @@ const messages = {
             lane_tasks: "Tasks",
             lane_then: "Then",
             nested_count: "{count} nested tasks",
+            loading_plugins: "Loading plugins...",
+            move_down: "Move down",
+            move_up: "Move up",
             no_task_results: "No matching task types.",
             pick_task_type: "Choose a task type",
             search_task_placeholder: "Search task types...",
@@ -230,6 +248,7 @@ const makeConfig = () => ({
                 inheritAttrs: false,
                 template: "<button v-bind='$attrs'><slot /></button>",
             },
+            KsLoading: {template: "<div data-test='ks-loading' />"},
         },
     },
 })
@@ -551,13 +570,137 @@ describe("BlockEditor", () => {
             await wrapper.vm.$nextTick()
 
             // Then — insertTask uses the primed parentPath
-            const vm = wrapper.vm as unknown as {insertTask: (fqcn: string, label: string) => void}
-            vm.insertTask("io.kestra.plugin.core.log.Log", "Log")
+            const vm = wrapper.vm as unknown as {insertTask: (fqcn: string) => void}
+            vm.insertTask("io.kestra.plugin.core.log.Log")
             await wrapper.vm.$nextTick()
 
             const {flowYamlUtils} = await import("@kestra-io/topology")
             const parsed = flowYamlUtils.parse(mockFlowYaml.value)
             expect(parsed.tasks[1].then).toHaveLength(2)
+        })
+
+        it("populates the picker list from pluginsStore plugin data", async () => {
+            // Given
+            const wrapper = mount(BlockEditor, makeConfig())
+            const vm = wrapper.vm as unknown as {
+                filteredCommonTypes: Array<{fqcn: string; label: string; group: string}>
+            }
+
+            // When (plugins are already set in mock)
+
+            // Then — picker entries come from mockPlugins
+            const fqcns = vm.filteredCommonTypes.map(e => e.fqcn)
+            expect(fqcns).toContain("io.kestra.plugin.core.log.Log")
+            expect(fqcns).toContain("io.kestra.plugin.core.flow.If")
+        })
+
+        it("filters picker entries by search text", async () => {
+            // Given
+            const wrapper = mount(BlockEditor, makeConfig())
+            const vm = wrapper.vm as unknown as {
+                taskPickerSearch: string
+                filteredCommonTypes: Array<{fqcn: string; label: string; group: string}>
+            }
+
+            // When
+            vm.taskPickerSearch = "If"
+            await wrapper.vm.$nextTick()
+
+            // Then
+            const fqcns = vm.filteredCommonTypes.map(e => e.fqcn)
+            expect(fqcns).toContain("io.kestra.plugin.core.flow.If")
+            expect(fqcns).not.toContain("io.kestra.plugin.core.log.Log")
+        })
+    })
+
+    describe("keyboard shortcuts", () => {
+        it("Delete key removes the selected leaf task", async () => {
+            // Given
+            const wrapper = mount(BlockEditor, makeConfig())
+            await wrapper.find("[data-test='block-card']").trigger("click")
+            await wrapper.vm.$nextTick()
+
+            // When
+            await wrapper.trigger("keydown", {key: "Delete"})
+            await wrapper.vm.$nextTick()
+
+            // Then
+            const {flowYamlUtils} = await import("@kestra-io/topology")
+            const parsed = flowYamlUtils.parse(mockFlowYaml.value)
+            expect(parsed.tasks).toHaveLength(1)
+        })
+
+        it("Backspace key removes the selected leaf task", async () => {
+            // Given
+            const wrapper = mount(BlockEditor, makeConfig())
+            await wrapper.find("[data-test='block-card']").trigger("click")
+            await wrapper.vm.$nextTick()
+
+            // When
+            await wrapper.trigger("keydown", {key: "Backspace"})
+            await wrapper.vm.$nextTick()
+
+            // Then
+            const {flowYamlUtils} = await import("@kestra-io/topology")
+            const parsed = flowYamlUtils.parse(mockFlowYaml.value)
+            expect(parsed.tasks).toHaveLength(1)
+        })
+
+        it("does not fire Delete when the event target is an input", async () => {
+            // Given
+            const wrapper = mount(BlockEditor, makeConfig())
+            await wrapper.find("[data-test='block-card']").trigger("click")
+            await wrapper.vm.$nextTick()
+            const originalLength = 2
+
+            // When — simulate event from an input element
+            const inputEl = document.createElement("input")
+            const event = new KeyboardEvent("keydown", {key: "Delete", bubbles: true})
+            Object.defineProperty(event, "target", {value: inputEl})
+            const editorEl = wrapper.element as HTMLElement
+            editorEl.dispatchEvent(event)
+            await wrapper.vm.$nextTick()
+
+            // Then — no deletion
+            const {flowYamlUtils} = await import("@kestra-io/topology")
+            const parsed = flowYamlUtils.parse(mockFlowYaml.value)
+            expect(parsed.tasks).toHaveLength(originalLength)
+        })
+
+        it("Alt+ArrowDown reorders the first task to second position", async () => {
+            // Given
+            const wrapper = mount(BlockEditor, makeConfig())
+            await wrapper.find("[data-test='block-card']").trigger("click")
+            await wrapper.vm.$nextTick()
+
+            // When
+            await wrapper.trigger("keydown", {key: "ArrowDown", altKey: true})
+            await wrapper.vm.$nextTick()
+
+            // Then
+            const {flowYamlUtils} = await import("@kestra-io/topology")
+            const parsed = flowYamlUtils.parse(mockFlowYaml.value)
+            expect(parsed.tasks).toHaveLength(2)
+            expect(parsed.tasks[0].id).toBe("http_task")
+            expect(parsed.tasks[1].id).toBe("log_task")
+        })
+
+        it("Alt+ArrowUp reorders the second task to first position", async () => {
+            // Given
+            const wrapper = mount(BlockEditor, makeConfig())
+            const cards = wrapper.findAll("[data-test='block-card']")
+            await cards[1].trigger("click")
+            await wrapper.vm.$nextTick()
+
+            // When
+            await wrapper.trigger("keydown", {key: "ArrowUp", altKey: true})
+            await wrapper.vm.$nextTick()
+
+            // Then
+            const {flowYamlUtils} = await import("@kestra-io/topology")
+            const parsed = flowYamlUtils.parse(mockFlowYaml.value)
+            expect(parsed.tasks[0].id).toBe("http_task")
+            expect(parsed.tasks[1].id).toBe("log_task")
         })
     })
 })

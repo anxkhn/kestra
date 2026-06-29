@@ -3,10 +3,12 @@ import {flowYamlUtils} from "@kestra-io/topology"
 import {
     addBlock,
     addBlockAtPath,
+    buildMinimalTask,
     deleteBlock,
     deleteBlockAtPath,
     duplicateBlock,
     duplicateBlockAtPath,
+    moveBlockAtPath,
     updateBlock,
     updateBlockAtPath,
 } from "../../../src/utils/flowableBlockOps"
@@ -675,6 +677,148 @@ tasks:
             expect(parsed.tasks[0].cases.dev).toHaveLength(1)
             expect(parsed.tasks[0].cases.staging).toHaveLength(1)
             expect(parsed.tasks[0].cases.staging[0].id).toBe("staging_log")
+        })
+    })
+
+    describe("moveBlockAtPath", () => {
+        it("moves a task up by one position", () => {
+            // Given
+
+            // When
+            const result = moveBlockAtPath(SIMPLE_FLOW, "tasks[1]", "up")
+
+            // Then
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks).toHaveLength(2)
+            expect(parsed.tasks[0].id).toBe("task_b")
+            expect(parsed.tasks[1].id).toBe("task_a")
+        })
+
+        it("moves a task down by one position", () => {
+            // Given
+
+            // When
+            const result = moveBlockAtPath(SIMPLE_FLOW, "tasks[0]", "down")
+
+            // Then
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks).toHaveLength(2)
+            expect(parsed.tasks[0].id).toBe("task_b")
+            expect(parsed.tasks[1].id).toBe("task_a")
+        })
+
+        it("is a no-op when moving the first item up", () => {
+            // Given
+
+            // When
+            const result = moveBlockAtPath(SIMPLE_FLOW, "tasks[0]", "up")
+
+            // Then
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks[0].id).toBe("task_a")
+            expect(parsed.tasks[1].id).toBe("task_b")
+        })
+
+        it("is a no-op when moving the last item down", () => {
+            // Given
+
+            // When
+            const result = moveBlockAtPath(SIMPLE_FLOW, "tasks[1]", "down")
+
+            // Then
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks[0].id).toBe("task_a")
+            expect(parsed.tasks[1].id).toBe("task_b")
+        })
+
+        it("moves a nested task within a lane", () => {
+            // Given — tasks[1].then has nested_a at [0]; there is only one item; add another first
+            const withTwo = addBlockAtPath(
+                FLOW_WITH_FLOWABLE,
+                "tasks[1].then",
+                {id: "nested_c", type: "io.kestra.plugin.core.log.Log"},
+            )
+
+            // When
+            const result = moveBlockAtPath(withTwo, "tasks[1].then[1]", "up")
+
+            // Then
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks[1].then[0].id).toBe("nested_c")
+            expect(parsed.tasks[1].then[1].id).toBe("nested_a")
+        })
+
+        it("preserves the full content of the moved blocks (round-trip safety)", () => {
+            // Given
+
+            // When
+            const result = moveBlockAtPath(FLOW_WITH_FLOWABLE, "tasks[0]", "down")
+
+            // Then
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks[0].id).toBe("if_task")
+            expect(parsed.tasks[0].then[0].id).toBe("nested_a")
+            expect(parsed.tasks[0].else[0].id).toBe("nested_b")
+            expect(parsed.tasks[1].id).toBe("leaf_task")
+        })
+
+        it("returns source unchanged when path has no bracket index", () => {
+            // Given
+
+            // When
+            const result = moveBlockAtPath(SIMPLE_FLOW, "tasks", "up")
+
+            // Then
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks[0].id).toBe("task_a")
+        })
+    })
+
+    describe("buildMinimalTask", () => {
+        it("produces an object with the given type", () => {
+            // Given
+
+            // When
+            const task = buildMinimalTask("io.kestra.plugin.core.log.Log")
+
+            // Then
+            expect(task.type).toBe("io.kestra.plugin.core.log.Log")
+        })
+
+        it("generates an id based on the short class name", () => {
+            // Given
+
+            // When
+            const task = buildMinimalTask("io.kestra.plugin.core.log.Log")
+
+            // Then
+            expect(typeof task.id).toBe("string")
+            expect(String(task.id)).toMatch(/^log_/)
+        })
+
+        it("generates a unique id on each call", () => {
+            // Given
+
+            // When
+            const a = buildMinimalTask("io.kestra.plugin.core.log.Log")
+            const b = buildMinimalTask("io.kestra.plugin.core.log.Log")
+
+            // Then
+            expect(a.id).not.toBe(b.id)
+        })
+
+        it("inserted task produces valid YAML that parses correctly", () => {
+            // Given
+            const task = buildMinimalTask("io.kestra.plugin.core.flow.If")
+
+            // When
+            const result = addBlock(SIMPLE_FLOW, "tasks", task)
+
+            // Then
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks).toHaveLength(3)
+            expect(parsed.tasks[2].type).toBe("io.kestra.plugin.core.flow.If")
+            expect(typeof parsed.tasks[2].id).toBe("string")
         })
     })
 

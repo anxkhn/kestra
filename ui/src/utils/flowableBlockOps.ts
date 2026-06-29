@@ -240,4 +240,104 @@ function walkIds(node: unknown, ids: Set<string>): void {
     }
 }
 
+export function moveBlockAtPath(source: string, path: string, direction: "up" | "down"): string {
+    const match = path.match(/^(.*)\[(\d+)\]$/)
+    if (!match) return source
+
+    const parentPath = match[1]
+    const index = parseInt(match[2], 10)
+
+    try {
+        const parsed = flowYamlUtils.parse<Record<string, unknown>>(source)
+        if (!parsed) return source
+
+        const list = getAtPath(parsed, parentPath)
+        if (!Array.isArray(list)) return source
+
+        const targetIndex = direction === "up" ? index - 1 : index + 1
+        if (targetIndex < 0 || targetIndex >= list.length) return source
+
+        const copy = [...list]
+        const tmp = copy[index]
+        copy[index] = copy[targetIndex]
+        copy[targetIndex] = tmp
+
+        setAtPath(parsed, parentPath, copy)
+        return flowYamlUtils.stringify(parsed)
+    } catch {
+        return source
+    }
+}
+
+function getAtPath(obj: Record<string, unknown>, path: string): unknown {
+    const segments = parsePath(path)
+    let cur: unknown = obj
+    for (const seg of segments) {
+        if (cur == null || typeof cur !== "object") return undefined
+        if (Array.isArray(cur)) {
+            cur = (cur as unknown[])[Number(seg)]
+        } else {
+            cur = (cur as Record<string, unknown>)[seg]
+        }
+    }
+    return cur
+}
+
+function setAtPath(obj: Record<string, unknown>, path: string, value: unknown): void {
+    const segments = parsePath(path)
+    if (segments.length === 0) return
+    let cur: unknown = obj
+    for (let i = 0; i < segments.length - 1; i++) {
+        const seg = segments[i]
+        if (cur == null || typeof cur !== "object") return
+        if (Array.isArray(cur)) {
+            cur = (cur as unknown[])[Number(seg)]
+        } else {
+            cur = (cur as Record<string, unknown>)[seg]
+        }
+    }
+    const last = segments[segments.length - 1]
+    if (cur == null || typeof cur !== "object") return
+    if (Array.isArray(cur)) {
+        (cur as unknown[])[Number(last)] = value
+    } else {
+        (cur as Record<string, unknown>)[last] = value
+    }
+}
+
+function parsePath(path: string): string[] {
+    const segments: string[] = []
+    let remaining = path
+    while (remaining.length > 0) {
+        const bracketIdx = remaining.indexOf("[")
+        const dotIdx = remaining.indexOf(".")
+        if (bracketIdx === -1 && dotIdx === -1) {
+            segments.push(remaining)
+            break
+        }
+        const firstSpecial = bracketIdx === -1 ? dotIdx : dotIdx === -1 ? bracketIdx : Math.min(bracketIdx, dotIdx)
+        if (firstSpecial > 0) {
+            segments.push(remaining.slice(0, firstSpecial))
+            remaining = remaining.slice(firstSpecial)
+        } else if (remaining[0] === "[") {
+            const close = remaining.indexOf("]")
+            segments.push(remaining.slice(1, close))
+            remaining = remaining.slice(close + 1)
+            if (remaining.startsWith(".")) remaining = remaining.slice(1)
+        } else if (remaining[0] === ".") {
+            remaining = remaining.slice(1)
+        }
+    }
+    return segments
+}
+
+let taskCounter = 0
+
+export function buildMinimalTask(fqcn: string): Record<string, unknown> {
+    const parts = fqcn.split(".")
+    const shortName = parts[parts.length - 1] ?? "task"
+    const id = shortName.toLowerCase().replace(/[^a-z0-9]+/g, "_") + "_" + Date.now().toString(36) + (++taskCounter).toString(36)
+    return {id, type: fqcn}
+}
+
 export {collectAllIds}
