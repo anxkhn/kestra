@@ -115,7 +115,7 @@
 
     .diff-card {
         border: 1px solid var(--ks-border-default);
-        border-radius: 0.25rem;
+        border-radius: var(--ks-radius-base);
         overflow: hidden;
     }
 
@@ -169,8 +169,8 @@
         align-items: center;
         gap: var(--ks-spacing-1);
         padding: var(--ks-spacing-1) var(--ks-spacing-2);
-        border-radius: 0.25rem;
-        font-size: 0.75rem;
+        border-radius: var(--ks-radius-base);
+        font-size: var(--ks-font-size-xs);
         font-weight: 500;
         flex-shrink: 0;
     }
@@ -228,7 +228,7 @@
     .diff-value {
         font-family: monospace;
         padding: 0 var(--ks-spacing-1);
-        border-radius: 0.15rem;
+        border-radius: var(--ks-radius-sm);
         max-width: 300px;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -260,6 +260,6 @@
 
     .diff-unchanged-label {
         color: var(--ks-text-secondary);
-        font-size: 0.875rem;
+        font-size: var(--ks-font-size-sm);
     }
 </style>
