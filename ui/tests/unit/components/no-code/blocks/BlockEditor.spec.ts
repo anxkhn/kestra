@@ -636,6 +636,38 @@ describe("BlockEditor", () => {
             expect(parsed.tasks[1].id).toBe("log_task")
         })
 
+        it("clears selection when a nested-child edit is open and the parent task is drag-reordered", async () => {
+            // Given — flow with leaf at tasks[0], flowable at tasks[1]; nested child open via path tasks[1].then[0]
+            mockFlowYaml.value = YAML_WITH_FLOWABLE
+            const wrapper = mount(BlockEditor, makeConfig())
+            const cluster = wrapper.findComponent({name: "FlowableClusterCard"})
+
+            // Select a nested child inside tasks[1]
+            await cluster.vm.$emit("select", "tasks[1].then[0]")
+            await wrapper.vm.$nextTick()
+            await wrapper.vm.$nextTick()
+
+            const vm = wrapper.vm as unknown as {
+                editingBlock: {path?: string} | undefined
+                selectedId: string | undefined
+                handleTaskDragStart: (event: DragEvent, index: number) => void
+                handleTaskDrop: (event: DragEvent, index: number) => void
+            }
+            expect(vm.editingBlock?.path).toBe("tasks[1].then[0]")
+            expect(vm.selectedId).toBe("nested_a")
+
+            // When — prime drag from tasks[0], then drop on tasks[1]
+            // This shifts the flowable from [1] to [0], making tasks[1].then[0] stale
+            const mockEvent = {preventDefault: () => undefined, dataTransfer: {effectAllowed: ""}} as unknown as DragEvent
+            vm.handleTaskDragStart(mockEvent, 0)
+            vm.handleTaskDrop(mockEvent, 1)
+            await wrapper.vm.$nextTick()
+
+            // Then — stale path is detected, selection cleared
+            expect(vm.selectedId).toBeUndefined()
+            expect(vm.editingBlock).toBeUndefined()
+        })
+
         it("emits update:selectedId when selectedId changes via v-model", async () => {
             // Given
             const wrapper = mount(BlockEditor, {

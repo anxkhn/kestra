@@ -1,5 +1,6 @@
 <template>
     <div
+        ref="editorEl"
         class="block-editor"
         data-test="block-editor"
         tabindex="-1"
@@ -13,7 +14,11 @@
                     {{ t("no_code.sections.tasks") }}
                 </p>
 
-                <div class="block-editor-list" data-test="block-editor-task-list">
+                <div
+                    class="block-editor-list"
+                    data-test="block-editor-task-list"
+                    @dragend="handleTaskDragEnd"
+                >
                     <template v-for="(task, index) in parsedTasks" :key="String(task.id ?? index)">
                         <FlowableClusterCard
                             v-if="isFlowable(task)"
@@ -22,11 +27,14 @@
                             :icons="pluginsStore.icons"
                             :selectedId="selectedId"
                             :depth="0"
+                            :data-block-id="String(task.id ?? index)"
                             data-test="block-card"
                             @select="openNestedEdit"
                             @delete="onDeleteAtPath"
                             @duplicate="onDuplicateAtPath"
                             @add-at-path="openTaskPickerAtPath"
+                            @dragover.prevent="handleTaskDragOver($event, index)"
+                            @drop.prevent="handleTaskDrop($event, index)"
                         />
                         <BlockCard
                             v-else
@@ -35,6 +43,7 @@
                             :draggable="true"
                             :dragOver="taskDragOverIndex === index"
                             :icons="pluginsStore.icons"
+                            :data-block-id="String(task.id ?? index)"
                             @select="selectBlock('tasks', task)"
                             @delete="onDelete('tasks', task.id)"
                             @duplicate="onDuplicate('tasks', task.id)"
@@ -102,6 +111,7 @@
                         :draggable="true"
                         :dragOver="triggerDragOverIndex === index"
                         :icons="pluginsStore.icons"
+                        :data-block-id="String(trigger.id ?? index)"
                         @select="selectBlock('triggers', trigger)"
                         @delete="onDelete('triggers', trigger.id)"
                         @duplicate="onDuplicate('triggers', trigger.id)"
@@ -283,18 +293,23 @@
         flowLevelFinally.value.length > 0,
     )
 
-    const localSelectedId = ref<string | undefined>(props.selectedId)
+    const editorEl = ref<HTMLElement>()
+    const internalSelectedId = ref<string | undefined>(props.selectedId)
 
     const selectedId = computed({
-        get: () => props.selectedId ?? localSelectedId.value,
+        get: () => internalSelectedId.value,
         set: (v: string | undefined) => {
-            localSelectedId.value = v
+            internalSelectedId.value = v
             emit("update:selectedId", v)
         },
     })
 
-    watch(() => props.selectedId, (v) => {
-        localSelectedId.value = v
+    watch(() => props.selectedId, async (id) => {
+        internalSelectedId.value = id
+        if (!id || !editorEl.value) return
+        await nextTick()
+        const card = editorEl.value.querySelector(`[data-block-id="${id}"]`) as HTMLElement | null
+        card?.scrollIntoView({block: "nearest", behavior: "smooth"})
     })
 
     interface EditingBlock {
@@ -519,8 +534,23 @@
         handleDrop: handleTaskDropBase,
     } = useDragAndDrop()
 
+    function clearSelectionIfPathStale(_parentSection: string, from: number, to: number) {
+        const path = editingBlock.value?.path
+        if (!path) return
+        const match = path.match(/^tasks\[(\d+)\]/)
+        if (!match) return
+        const movedIndex = parseInt(match[1], 10)
+        const lo = Math.min(from, to)
+        const hi = Math.max(from, to)
+        if (movedIndex >= lo && movedIndex <= hi) {
+            selectedId.value = undefined
+            editingBlock.value = undefined
+        }
+    }
+
     function handleTaskDrop(event: DragEvent, targetIndex: number) {
         handleTaskDropBase(event, targetIndex, (from, to) => {
+            clearSelectionIfPathStale("tasks", from, to)
             applyYaml(reorderAtPath(flowYaml.value, "tasks", from, to))
         })
     }
@@ -540,6 +570,19 @@
     }
 
     function onReorderAtPath(parentPath: string, fromIndex: number, toIndex: number) {
+        const path = editingBlock.value?.path
+        if (path && path.startsWith(parentPath + "[")) {
+            const match = path.slice(parentPath.length).match(/^\[(\d+)\]/)
+            if (match) {
+                const movedIndex = parseInt(match[1], 10)
+                const lo = Math.min(fromIndex, toIndex)
+                const hi = Math.max(fromIndex, toIndex)
+                if (movedIndex >= lo && movedIndex <= hi) {
+                    selectedId.value = undefined
+                    editingBlock.value = undefined
+                }
+            }
+        }
         applyYaml(reorderAtPath(flowYaml.value, parentPath, fromIndex, toIndex))
     }
 

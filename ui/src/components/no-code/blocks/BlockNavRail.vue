@@ -120,7 +120,7 @@
     .block-nav-rail {
         display: flex;
         flex-direction: column;
-        width: 220px;
+        width: var(--block-nav-rail-width, 220px);
         flex-shrink: 0;
         border-right: 1px solid var(--ks-border-default);
         overflow-y: auto;
