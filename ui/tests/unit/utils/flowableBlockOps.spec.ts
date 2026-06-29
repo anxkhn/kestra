@@ -290,29 +290,30 @@ errors:
     })
 
     describe("deleteBlockAtPath", () => {
-        it("removes a nested task by full path leaving the branch empty", () => {
+        it("removes a nested task by full path and cleans up the empty array key", () => {
             // Given
 
             // When
             const result = deleteBlockAtPath(FLOW_WITH_FLOWABLE, "tasks[1].then[0]")
 
-            // Then — the item is removed; then is empty (yaml lib leaves the array key)
+            // Then — the item is removed and the empty then key is stripped
             const parsed = flowYamlUtils.parse(result)
-            expect(Array.isArray(parsed.tasks[1].then) ? parsed.tasks[1].then.length : 0).toBe(0)
+            expect(parsed.tasks[1].then).toBeUndefined()
         })
 
-        it("removes a task from a Switch case lane", () => {
+        it("removes a task from a Switch case lane and cleans up empty case array", () => {
             // Given
 
             // When
             const result = deleteBlockAtPath(FLOW_WITH_SWITCH, "tasks[0].cases.prod[0]")
 
-            // Then
+            // Then — prod case was the only item, its array is cleaned; dev is untouched
             const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks[0].cases.prod).toBeUndefined()
             expect(parsed.tasks[0].cases.dev).toHaveLength(1)
         })
 
-        it("preserves sibling branches when deleting from one", () => {
+        it("preserves sibling branches when deleting from one, cleans up the emptied branch", () => {
             // Given
 
             // When
@@ -320,6 +321,7 @@ errors:
 
             // Then
             const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks[1].then).toBeUndefined()
             expect(parsed.tasks[1].else).toHaveLength(1)
             expect(parsed.tasks[1].else[0].id).toBe("nested_b")
         })
@@ -402,6 +404,60 @@ triggers:
             expect(triggerIds.some((id: string) => id.startsWith("webhook_copy_"))).toBe(true)
         })
 
+        it("renames all nested task IDs when duplicating a flowable block", () => {
+            // Given — if_task has nested_a in then and nested_b in else
+            const originalIds = new Set(["leaf_task", "if_task", "nested_a", "nested_b"])
+
+            // When
+            const result = duplicateBlock(FLOW_WITH_FLOWABLE, "tasks", "if_task")
+
+            // Then — the duplicate has unique IDs for itself and all nested tasks
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks).toHaveLength(3)
+            const copy = parsed.tasks[2]
+            expect(String(copy.id)).toMatch(/^if_task_copy/)
+
+            const copyThenId = String(copy.then[0].id)
+            const copyElseId = String(copy.else[0].id)
+            expect(originalIds.has(copyThenId)).toBe(false)
+            expect(originalIds.has(copyElseId)).toBe(false)
+            expect(copyThenId).not.toBe(copyElseId)
+
+            const allIds = new Set([
+                ...parsed.tasks.map((t: Record<string, unknown>) => String(t.id)),
+                ...parsed.tasks.flatMap((t: Record<string, unknown>) =>
+                    Array.isArray(t.then) ? (t.then as Record<string, unknown>[]).map(n => String(n.id)) : [],
+                ),
+                ...parsed.tasks.flatMap((t: Record<string, unknown>) =>
+                    Array.isArray(t.else) ? (t.else as Record<string, unknown>[]).map(n => String(n.id)) : [],
+                ),
+            ])
+            expect(allIds.size).toBe(parsed.tasks.length + copy.then.length + copy.else.length + 2)
+        })
+
+        it("renames nested IDs in a Switch block when duplicating, preserving all cases", () => {
+            // Given — sw has prod_log, dev_log, default_log nested under cases/defaults
+            const originalIds = new Set(["sw", "prod_log", "dev_log", "default_log"])
+
+            // When
+            const result = duplicateBlock(FLOW_WITH_SWITCH, "tasks", "sw")
+
+            // Then — copy top-level ID is new
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks).toHaveLength(2)
+            const copy = parsed.tasks[1]
+            expect(String(copy.id)).toMatch(/^sw_copy/)
+
+            // All nested IDs are renamed and unique vs originals
+            const copyProdId = String(copy.cases.prod[0].id)
+            const copyDevId = String(copy.cases.dev[0].id)
+            const copyDefaultId = String(copy.defaults[0].id)
+            expect(originalIds.has(copyProdId)).toBe(false)
+            expect(originalIds.has(copyDevId)).toBe(false)
+            expect(originalIds.has(copyDefaultId)).toBe(false)
+            expect(new Set([copyProdId, copyDevId, copyDefaultId]).size).toBe(3)
+        })
+
         it("returns source unchanged when id is not found", () => {
             // Given
 
@@ -453,6 +509,40 @@ tasks:
             const copyId = String(parsed.tasks[0].then[1].id)
             expect(copyId).toMatch(/^nested_a_copy/)
             expect(copyId).not.toBe("nested_a_copy")
+        })
+
+        it("renames all nested IDs when duplicating a flowable block via path", () => {
+            // Given — outer_if has inner_if in then, inner_if has deep_task
+            const deepFlow = `
+id: my_flow
+namespace: company.team
+tasks:
+  - id: outer_if
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{ true }}"
+    then:
+      - id: inner_if
+        type: io.kestra.plugin.core.flow.If
+        condition: "{{ false }}"
+        then:
+          - id: deep_task
+            type: io.kestra.plugin.core.log.Log
+`.trim()
+            const originalIds = new Set(["outer_if", "inner_if", "deep_task"])
+
+            // When — duplicate outer_if
+            const result = duplicateBlockAtPath(deepFlow, "tasks[0]")
+
+            // Then — the copy and all its nested IDs are unique vs originals
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks).toHaveLength(2)
+            const copy = parsed.tasks[1]
+            expect(originalIds.has(String(copy.id))).toBe(false)
+            const copyInner = copy.then[0]
+            expect(originalIds.has(String(copyInner.id))).toBe(false)
+            const copyDeep = copyInner.then[0]
+            expect(originalIds.has(String(copyDeep.id))).toBe(false)
+            expect(new Set([String(copy.id), String(copyInner.id), String(copyDeep.id)]).size).toBe(3)
         })
 
         it("duplicates a task within a Switch case lane", () => {

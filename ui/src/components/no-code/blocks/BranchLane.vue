@@ -87,14 +87,14 @@
 
     import {KsTag, KsEmpty, KsAlert} from "@kestra-io/design-system"
 
+    import {isFlowableType} from "../../../utils/flowableBlockOps"
+
     const FlowableClusterCard = defineAsyncComponent(() => import("./FlowableClusterCard.vue"))
     const LeafBlockCard = defineAsyncComponent(() => import("./LeafBlockCard.vue"))
 
     const {t} = useI18n()
 
     const MAX_INDENT_DEPTH = 4
-
-    const FLOWABLE_SUFFIXES = ["If", "Switch", "Parallel", "Sequential", "ForEach", "EachSequential", "Dag", "WaitFor", "ForEachItem"]
 
     const props = defineProps<{
         laneName: string
@@ -152,10 +152,7 @@
     })
 
     function isFlowable(task: Record<string, unknown>): boolean {
-        const type = String(task.type ?? "")
-        const iconEntry = props.icons?.[type]
-        if (iconEntry) return iconEntry.flowable
-        return FLOWABLE_SUFFIXES.some(suffix => type.endsWith(`.${suffix}`))
+        return isFlowableType(String(task.type ?? ""), props.icons)
     }
 </script>
 
@@ -183,7 +180,7 @@
     }
 
     .branch-lane-icon {
-        font-size: 0.875rem;
+        font-size: var(--ks-font-size-sm);
         display: flex;
         flex-shrink: 0;
         color: var(--ks-icon-muted);
@@ -251,7 +248,7 @@
     }
 
     .branch-lane-add-icon {
-        font-size: 0.875rem;
+        font-size: var(--ks-font-size-sm);
         display: flex;
     }
 </style>

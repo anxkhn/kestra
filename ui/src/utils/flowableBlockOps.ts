@@ -4,6 +4,20 @@ export type BlockSection = "tasks" | "triggers" | "errors" | "finally"
 
 const FLOWABLE_BRANCH_KEYS = ["tasks", "then", "else", "errors", "finally", "defaults", "cases"] as const
 
+export const FLOWABLE_SUFFIXES = [
+    "If", "Switch", "Parallel", "Sequential", "ForEach",
+    "EachSequential", "Dag", "WaitFor", "ForEachItem",
+] as const
+
+export function isFlowableType(
+    type: string,
+    icons?: Record<string, {icon: string; flowable: boolean}>,
+): boolean {
+    const iconEntry = icons?.[type]
+    if (iconEntry !== undefined) return iconEntry.flowable
+    return FLOWABLE_SUFFIXES.some(suffix => type.endsWith(`.${suffix}`))
+}
+
 export function updateBlock(source: string, section: BlockSection, id: string, newContent: string): string {
     const existing = flowYamlUtils.extractBlock({source, section, key: id})
     if (!existing) return source
@@ -60,7 +74,8 @@ export function deleteBlock(source: string, section: BlockSection, id: string): 
 }
 
 export function deleteBlockAtPath(source: string, path: string): string {
-    return flowYamlUtils.replaceBlockWithPath({source, path, newContent: ""})
+    const afterDelete = flowYamlUtils.replaceBlockWithPath({source, path, newContent: ""})
+    return removeEmptySequences(afterDelete)
 }
 
 export function duplicateBlock(source: string, section: BlockSection, id: string): string {
@@ -72,7 +87,8 @@ export function duplicateBlock(source: string, section: BlockSection, id: string
 
     const existingIds = collectAllIds(source)
     const newId = uniqueId(String(parsed.id), existingIds)
-    const duplicate = {...parsed, id: newId}
+    existingIds.add(newId)
+    const duplicate = renameNestedIds({...parsed, id: newId}, existingIds)
 
     const path = flowYamlUtils.getPathFromSectionAndId({source, section, id})
     const match = path?.match(/\[(\d+)\]$/)
@@ -96,7 +112,8 @@ export function duplicateBlockAtPath(source: string, path: string): string {
 
     const existingIds = collectAllIds(source)
     const newId = uniqueId(String(parsed.id), existingIds)
-    const duplicate = {...parsed, id: newId}
+    existingIds.add(newId)
+    const duplicate = renameNestedIds({...parsed, id: newId}, existingIds)
 
     const parentPath = pathParent(path)
     const match = path.match(/\[(\d+)\]$/)
@@ -125,6 +142,69 @@ function uniqueId(baseId: string, existingIds: Set<string>): string {
     let counter = 2
     while (existingIds.has(`${candidate}_${counter}`)) counter++
     return `${candidate}_${counter}`
+}
+
+function renameNestedIds(
+    node: Record<string, unknown>,
+    takenIds: Set<string>,
+): Record<string, unknown> {
+    const result: Record<string, unknown> = {...node}
+    for (const key of FLOWABLE_BRANCH_KEYS) {
+        const val = node[key]
+        if (Array.isArray(val)) {
+            result[key] = (val as Record<string, unknown>[]).map(item =>
+                renameTaskNode(item, takenIds),
+            )
+        } else if (key === "cases" && val && typeof val === "object" && !Array.isArray(val)) {
+            const casesObj = val as Record<string, unknown>
+            const newCases: Record<string, unknown> = {}
+            for (const [caseKey, caseVal] of Object.entries(casesObj)) {
+                if (Array.isArray(caseVal)) {
+                    newCases[caseKey] = (caseVal as Record<string, unknown>[]).map(item =>
+                        renameTaskNode(item, takenIds),
+                    )
+                } else {
+                    newCases[caseKey] = caseVal
+                }
+            }
+            result[key] = newCases
+        }
+    }
+    return result
+}
+
+function renameTaskNode(
+    node: Record<string, unknown>,
+    takenIds: Set<string>,
+): Record<string, unknown> {
+    if (!node || typeof node !== "object") return node
+    const originalId = typeof node.id === "string" ? node.id : undefined
+    if (originalId === undefined) return renameNestedIds(node, takenIds)
+    const newId = uniqueId(originalId, takenIds)
+    takenIds.add(newId)
+    return renameNestedIds({...node, id: newId}, takenIds)
+}
+
+function removeEmptySequences(source: string): string {
+    try {
+        const parsed = flowYamlUtils.parse<Record<string, unknown>>(source)
+        const cleaned = removeEmptyArrays(parsed) as Record<string, unknown>
+        return flowYamlUtils.stringify(cleaned)
+    } catch {
+        return source
+    }
+}
+
+function removeEmptyArrays(node: unknown): unknown {
+    if (!node || typeof node !== "object") return node
+    if (Array.isArray(node)) return node.map(removeEmptyArrays)
+    const obj = node as Record<string, unknown>
+    const result: Record<string, unknown> = {}
+    for (const [key, val] of Object.entries(obj)) {
+        if (Array.isArray(val) && val.length === 0) continue
+        result[key] = removeEmptyArrays(val)
+    }
+    return result
 }
 
 function collectAllIds(source: string): Set<string> {

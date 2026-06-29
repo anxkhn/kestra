@@ -99,7 +99,7 @@
             <button
                 class="block-editor-add-btn"
                 type="button"
-                data-test="block-editor-add-task"
+                data-test="block-editor-add-task-fallback"
                 @click="openTaskPicker('tasks')"
             >
                 <PlusCircleOutline class="block-editor-add-icon" />
@@ -176,6 +176,7 @@
         deleteBlockAtPath,
         duplicateBlock,
         duplicateBlockAtPath,
+        isFlowableType,
         updateBlock,
         updateBlockAtPath,
         type BlockSection,
@@ -201,13 +202,8 @@
         }
     })
 
-    const FLOWABLE_SUFFIXES = ["If", "Switch", "Parallel", "Sequential", "ForEach", "EachSequential", "Dag", "WaitFor", "ForEachItem"]
-
     function isFlowable(task: Record<string, unknown>): boolean {
-        const type = String(task.type ?? "")
-        const iconEntry = pluginsStore.icons?.[type]
-        if (iconEntry) return iconEntry.flowable
-        return FLOWABLE_SUFFIXES.some(suffix => type.endsWith(`.${suffix}`))
+        return isFlowableType(String(task.type ?? ""), pluginsStore.icons)
     }
 
     const parsedTasks = computed<Record<string, unknown>[]>(() => {
@@ -280,7 +276,8 @@
         }
 
         selectedId.value = strId
-        editingBlock.value = {id: strId, section: "tasks", data: parsed, path}
+        const section: BlockSection = path.startsWith("errors") ? "errors" : path.startsWith("finally") ? "finally" : "tasks"
+        editingBlock.value = {id: strId, section, data: parsed, path}
         await nextTick()
         taskEditRef.value?.open()
     }

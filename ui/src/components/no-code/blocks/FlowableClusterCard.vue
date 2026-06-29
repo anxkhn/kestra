@@ -80,6 +80,7 @@
                 <KsInput
                     v-model="newCaseKey"
                     :placeholder="t('block_editor.switch_case_key_placeholder')"
+                    :aria-label="t('block_editor.switch_case_key_placeholder')"
                     size="small"
                     class="flowable-cluster-case-input"
                     data-test="flowable-add-case-input"
@@ -362,7 +363,7 @@
     }
 
     .flowable-cluster-add-icon {
-        font-size: 0.875rem;
+        font-size: var(--ks-font-size-sm);
         display: flex;
     }
 </style>
