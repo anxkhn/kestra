@@ -32,10 +32,16 @@
                             v-else
                             :block="task"
                             :selected="selectedId === String(task.id)"
+                            :draggable="true"
+                            :dragOver="taskDragOverIndex === index"
                             :icons="pluginsStore.icons"
                             @select="selectBlock('tasks', task)"
                             @delete="onDelete('tasks', task.id)"
                             @duplicate="onDuplicate('tasks', task.id)"
+                            @drag-start="handleTaskDragStart($event, index)"
+                            @drag-over="handleTaskDragOver($event, index)"
+                            @drop="handleTaskDrop($event, index)"
+                            @drag-end="handleTaskDragEnd"
                         />
                     </template>
                 </div>
@@ -64,6 +70,7 @@
                     @delete="onDeleteAtPath"
                     @duplicate="onDuplicateAtPath"
                     @add-at-path="openTaskPickerAtPath"
+                    @reorder="onReorderAtPath"
                 />
                 <BranchLane
                     v-if="flowLevelFinally.length > 0"
@@ -77,6 +84,7 @@
                     @delete="onDeleteAtPath"
                     @duplicate="onDuplicateAtPath"
                     @add-at-path="openTaskPickerAtPath"
+                    @reorder="onReorderAtPath"
                 />
             </section>
 
@@ -91,10 +99,16 @@
                         :key="String(trigger.id ?? index)"
                         :block="trigger"
                         :selected="selectedId === String(trigger.id)"
+                        :draggable="true"
+                        :dragOver="triggerDragOverIndex === index"
                         :icons="pluginsStore.icons"
                         @select="selectBlock('triggers', trigger)"
                         @delete="onDelete('triggers', trigger.id)"
                         @duplicate="onDuplicate('triggers', trigger.id)"
+                        @drag-start="handleTriggerDragStart($event, index)"
+                        @drag-over="handleTriggerDragOver($event, index)"
+                        @drop="handleTriggerDrop($event, index)"
+                        @drag-end="handleTriggerDragEnd"
                     />
                 </div>
             </section>
@@ -203,10 +217,12 @@
         duplicateBlockAtPath,
         isFlowableType,
         moveBlockAtPath,
+        reorderAtPath,
         updateBlock,
         updateBlockAtPath,
         type BlockSection,
     } from "../../../utils/flowableBlockOps"
+    import {useDragAndDrop} from "../../../composables/useDragAndDrop"
     import BlockCard from "./BlockCard.vue"
     import BranchLane from "./BranchLane.vue"
     import FlowableClusterCard from "./FlowableClusterCard.vue"
@@ -215,6 +231,14 @@
     const {t} = useI18n()
     const flowStore = useFlowStore()
     const pluginsStore = usePluginsStore()
+
+    const props = defineProps<{
+        selectedId?: string
+    }>()
+
+    const emit = defineEmits<{
+        (e: "update:selectedId", id: string | undefined): void
+    }>()
 
     const flowYaml = computed<string>(() => flowStore.flowYaml ?? "")
     const flowId = computed<string>(() => flowStore.flow?.id ?? "")
@@ -259,7 +283,19 @@
         flowLevelFinally.value.length > 0,
     )
 
-    const selectedId = ref<string | undefined>(undefined)
+    const localSelectedId = ref<string | undefined>(props.selectedId)
+
+    const selectedId = computed({
+        get: () => props.selectedId ?? localSelectedId.value,
+        set: (v: string | undefined) => {
+            localSelectedId.value = v
+            emit("update:selectedId", v)
+        },
+    })
+
+    watch(() => props.selectedId, (v) => {
+        localSelectedId.value = v
+    })
 
     interface EditingBlock {
         id: string
@@ -473,6 +509,38 @@
             applyYaml(addBlock(flowYaml.value, section, block, lastId))
         }
         taskPickerVisible.value = false
+    }
+
+    const {
+        dragOverIndex: taskDragOverIndex,
+        handleDragStart: handleTaskDragStart,
+        handleDragOver: handleTaskDragOver,
+        handleDragEnd: handleTaskDragEnd,
+        handleDrop: handleTaskDropBase,
+    } = useDragAndDrop()
+
+    function handleTaskDrop(event: DragEvent, targetIndex: number) {
+        handleTaskDropBase(event, targetIndex, (from, to) => {
+            applyYaml(reorderAtPath(flowYaml.value, "tasks", from, to))
+        })
+    }
+
+    const {
+        dragOverIndex: triggerDragOverIndex,
+        handleDragStart: handleTriggerDragStart,
+        handleDragOver: handleTriggerDragOver,
+        handleDragEnd: handleTriggerDragEnd,
+        handleDrop: handleTriggerDropBase,
+    } = useDragAndDrop()
+
+    function handleTriggerDrop(event: DragEvent, targetIndex: number) {
+        handleTriggerDropBase(event, targetIndex, (from, to) => {
+            applyYaml(reorderAtPath(flowYaml.value, "triggers", from, to))
+        })
+    }
+
+    function onReorderAtPath(parentPath: string, fromIndex: number, toIndex: number) {
+        applyYaml(reorderAtPath(flowYaml.value, parentPath, fromIndex, toIndex))
     }
 
     function onEditorKeydown(event: KeyboardEvent) {

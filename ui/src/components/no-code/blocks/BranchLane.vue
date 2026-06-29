@@ -39,10 +39,16 @@
                         :icons="icons"
                         :path="`${parentPath}[${index}]`"
                         :selected="selectedId === String(task.id)"
+                        :draggable="true"
+                        :dragOver="dragOverIndex === index"
                         :data-test="`nested-block-card`"
                         @select="emit('select', `${parentPath}[${index}]`)"
                         @delete="emit('delete', `${parentPath}[${index}]`)"
                         @duplicate="emit('duplicate', `${parentPath}[${index}]`)"
+                        @drag-start="handleDragStart($event, index)"
+                        @drag-over="handleDragOver($event, index)"
+                        @drop="handleDrop($event, index)"
+                        @drag-end="handleDragEnd"
                     />
                 </template>
             </template>
@@ -88,6 +94,7 @@
     import {KsTag, KsEmpty, KsAlert} from "@kestra-io/design-system"
 
     import {isFlowableType} from "../../../utils/flowableBlockOps"
+    import {useDragAndDrop} from "../../../composables/useDragAndDrop"
 
     const FlowableClusterCard = defineAsyncComponent(() => import("./FlowableClusterCard.vue"))
     const LeafBlockCard = defineAsyncComponent(() => import("./LeafBlockCard.vue"))
@@ -110,7 +117,16 @@
         (e: "delete", path: string): void
         (e: "duplicate", path: string): void
         (e: "add-at-path", parentPath: string, afterIndex: number): void
+        (e: "reorder", parentPath: string, fromIndex: number, toIndex: number): void
     }>()
+
+    const {dragOverIndex, handleDragStart, handleDragOver, handleDragEnd, handleDrop: baseDrop} = useDragAndDrop()
+
+    function handleDrop(event: DragEvent, targetIndex: number) {
+        baseDrop(event, targetIndex, (from, to) => {
+            emit("reorder", props.parentPath, from, to)
+        })
+    }
 
     const depth = computed(() => props.depth ?? 0)
 

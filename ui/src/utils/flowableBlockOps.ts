@@ -240,6 +240,27 @@ function walkIds(node: unknown, ids: Set<string>): void {
     }
 }
 
+export function reorderAtPath(source: string, parentPath: string, fromIndex: number, toIndex: number): string {
+    if (fromIndex === toIndex) return source
+    try {
+        const parsed = flowYamlUtils.parse<Record<string, unknown>>(source)
+        if (!parsed) return source
+
+        const list = getAtPath(parsed, parentPath)
+        if (!Array.isArray(list)) return source
+        if (fromIndex < 0 || fromIndex >= list.length || toIndex < 0 || toIndex >= list.length) return source
+
+        const copy = [...list]
+        const [item] = copy.splice(fromIndex, 1)
+        copy.splice(toIndex, 0, item)
+
+        setAtPath(parsed, parentPath, copy)
+        return flowYamlUtils.stringify(parsed)
+    } catch {
+        return source
+    }
+}
+
 export function moveBlockAtPath(source: string, path: string, direction: "up" | "down"): string {
     const match = path.match(/^(.*)\[(\d+)\]$/)
     if (!match) return source

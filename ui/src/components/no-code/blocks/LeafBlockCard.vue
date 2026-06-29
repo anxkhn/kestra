@@ -1,16 +1,28 @@
 <template>
     <div
         class="leaf-block-card"
-        :class="{'leaf-block-card--selected': selected}"
+        :class="{'leaf-block-card--selected': selected, 'leaf-block-card--drag-over': dragOver}"
         role="button"
         tabindex="0"
         :aria-pressed="selected"
         :aria-label="cardAriaLabel"
+        :draggable="draggable"
         data-test="block-card"
         @click="emit('select')"
         @keydown.enter.prevent="emit('select')"
         @keydown.space.prevent="emit('select')"
+        @dragstart="emit('drag-start', $event)"
+        @dragover.prevent="emit('drag-over', $event)"
+        @drop.prevent="emit('drop', $event)"
+        @dragend="emit('drag-end')"
     >
+        <DragVertical
+            v-if="draggable"
+            class="leaf-block-card-grip"
+            :aria-label="t('block_editor.drag_reorder')"
+            @mousedown.stop
+        />
+
         <KsTaskIcon
             class="leaf-block-card-icon"
             :cls="String(block.type ?? '')"
@@ -51,6 +63,7 @@
     import {useI18n} from "vue-i18n"
     import ContentCopy from "vue-material-design-icons/ContentCopy.vue"
     import DeleteOutline from "vue-material-design-icons/DeleteOutline.vue"
+    import DragVertical from "vue-material-design-icons/DragVertical.vue"
 
     import {KsTaskIcon, KsIconButton} from "@kestra-io/design-system"
 
@@ -60,6 +73,8 @@
         block: Record<string, unknown>
         path: string
         selected?: boolean
+        draggable?: boolean
+        dragOver?: boolean
         icons?: Record<string, {icon: string; flowable: boolean}>
     }>()
 
@@ -67,6 +82,10 @@
         (e: "select"): void
         (e: "delete"): void
         (e: "duplicate"): void
+        (e: "drag-start", event: DragEvent): void
+        (e: "drag-over", event: DragEvent): void
+        (e: "drop", event: DragEvent): void
+        (e: "drag-end"): void
     }>()
 
     const shortType = computed(() => {
@@ -106,6 +125,29 @@
         &--selected {
             border-color: var(--ks-border-focus);
             background: var(--ks-bg-active);
+        }
+
+        &--drag-over {
+            border-color: var(--ks-text-link);
+            border-style: dashed;
+        }
+    }
+
+    .leaf-block-card-grip {
+        flex-shrink: 0;
+        color: var(--ks-icon-inactive);
+        cursor: grab;
+        display: flex;
+        font-size: var(--ks-font-size-sm);
+        opacity: 0;
+        transition: opacity 0.15s;
+
+        .leaf-block-card:hover & {
+            opacity: 1;
+        }
+
+        &:active {
+            cursor: grabbing;
         }
     }
 

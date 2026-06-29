@@ -207,8 +207,11 @@ const messages = {
             lane_then: "Then",
             nested_count: "{count} nested tasks",
             loading_plugins: "Loading plugins...",
+            drag_reorder: "Drag to reorder",
             move_down: "Move down",
             move_up: "Move up",
+            nav_rail_empty: "No tasks or triggers yet.",
+            nav_rail_title: "Outline",
             no_task_results: "No matching task types.",
             pick_task_type: "Choose a task type",
             search_task_placeholder: "Search task types...",
@@ -610,6 +613,44 @@ describe("BlockEditor", () => {
             const fqcns = vm.filteredCommonTypes.map(e => e.fqcn)
             expect(fqcns).toContain("io.kestra.plugin.core.flow.If")
             expect(fqcns).not.toContain("io.kestra.plugin.core.log.Log")
+        })
+    })
+
+    describe("drag-to-reorder", () => {
+        it("reorders tasks when a drag sequence completes on the top-level task list", async () => {
+            // Given
+            const wrapper = mount(BlockEditor, makeConfig())
+            const cards = wrapper.findAll("[data-test='block-card']")
+            expect(cards).toHaveLength(2)
+
+            // When — simulate drag from index 0 to index 1
+            await cards[0].trigger("dragstart", {dataTransfer: {effectAllowed: ""}})
+            await cards[1].trigger("dragover")
+            await cards[1].trigger("drop")
+            await wrapper.vm.$nextTick()
+
+            // Then — the order is reversed in the store YAML
+            const {flowYamlUtils} = await import("@kestra-io/topology")
+            const parsed = flowYamlUtils.parse(mockFlowYaml.value)
+            expect(parsed.tasks[0].id).toBe("http_task")
+            expect(parsed.tasks[1].id).toBe("log_task")
+        })
+
+        it("emits update:selectedId when selectedId changes via v-model", async () => {
+            // Given
+            const wrapper = mount(BlockEditor, {
+                ...makeConfig(),
+                props: {selectedId: undefined},
+            })
+
+            // When — click a card to select
+            await wrapper.find("[data-test='block-card']").trigger("click")
+            await wrapper.vm.$nextTick()
+
+            // Then — emitted update:selectedId with the block id
+            const emitted = wrapper.emitted("update:selectedId")
+            expect(emitted).toBeTruthy()
+            expect(emitted![0][0]).toBe("log_task")
         })
     })
 

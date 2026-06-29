@@ -9,6 +9,7 @@ import {
     duplicateBlock,
     duplicateBlockAtPath,
     moveBlockAtPath,
+    reorderAtPath,
     updateBlock,
     updateBlockAtPath,
 } from "../../../src/utils/flowableBlockOps"
@@ -809,6 +810,114 @@ tasks:
             expect(parsed.tasks[0].cases.prod[0].id).toBe("prod_second")
             expect(parsed.tasks[0].cases.prod[1].id).toBe("prod_log")
             expect(parsed.tasks[0].cases.dev[0].id).toBe("dev_log")
+        })
+    })
+
+    describe("reorderAtPath", () => {
+        it("moves an item from index 0 to index 1 in the top-level tasks list", () => {
+            // Given
+
+            // When
+            const result = reorderAtPath(SIMPLE_FLOW, "tasks", 0, 1)
+
+            // Then
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks[0].id).toBe("task_b")
+            expect(parsed.tasks[1].id).toBe("task_a")
+        })
+
+        it("moves an item from index 1 to index 0 (reverse)", () => {
+            // Given
+
+            // When
+            const result = reorderAtPath(SIMPLE_FLOW, "tasks", 1, 0)
+
+            // Then
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks[0].id).toBe("task_b")
+            expect(parsed.tasks[1].id).toBe("task_a")
+        })
+
+        it("is a no-op when fromIndex equals toIndex", () => {
+            // Given
+
+            // When
+            const result = reorderAtPath(SIMPLE_FLOW, "tasks", 0, 0)
+
+            // Then
+            expect(result).toBe(SIMPLE_FLOW)
+        })
+
+        it("reorders within a nested lane (Parallel.tasks)", () => {
+            // Given
+
+            // When
+            const result = reorderAtPath(FLOW_WITH_PARALLEL, "tasks[0].tasks", 0, 1)
+
+            // Then
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks[0].tasks[0].id).toBe("sub_b")
+            expect(parsed.tasks[0].tasks[1].id).toBe("sub_a")
+        })
+
+        it("preserves nested content of moved items (round-trip safety)", () => {
+            // Given — if_task contains nested then/else branches
+            const threeItems = `
+id: my_flow
+namespace: company.team
+tasks:
+  - id: task_a
+    type: io.kestra.plugin.core.log.Log
+  - id: if_task
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{ true }}"
+    then:
+      - id: nested_a
+        type: io.kestra.plugin.core.log.Log
+  - id: task_c
+    type: io.kestra.plugin.core.log.Log
+`.trim()
+
+            // When — move if_task from index 1 to index 0
+            const result = reorderAtPath(threeItems, "tasks", 1, 0)
+
+            // Then — nested content intact
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks[0].id).toBe("if_task")
+            expect(parsed.tasks[0].then[0].id).toBe("nested_a")
+            expect(parsed.tasks[1].id).toBe("task_a")
+            expect(parsed.tasks[2].id).toBe("task_c")
+        })
+
+        it("reorders within a Switch.cases lane, preserving all other cases", () => {
+            // Given — add a second task to prod so there are two to reorder
+            const withTwo = addBlockAtPath(
+                FLOW_WITH_SWITCH,
+                "tasks[0].cases.prod",
+                {id: "prod_second", type: "io.kestra.plugin.core.log.Log"},
+            )
+
+            // When
+            const result = reorderAtPath(withTwo, "tasks[0].cases.prod", 0, 1)
+
+            // Then — order swapped, other cases intact
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks[0].cases.prod[0].id).toBe("prod_second")
+            expect(parsed.tasks[0].cases.prod[1].id).toBe("prod_log")
+            expect(parsed.tasks[0].cases.dev[0].id).toBe("dev_log")
+            expect(parsed.tasks[0].defaults[0].id).toBe("default_log")
+        })
+
+        it("returns source unchanged when indices are out of bounds", () => {
+            // Given
+
+            // When
+            const result = reorderAtPath(SIMPLE_FLOW, "tasks", 0, 99)
+
+            // Then
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks[0].id).toBe("task_a")
+            expect(parsed.tasks[1].id).toBe("task_b")
         })
     })
 
