@@ -15,7 +15,7 @@
                     <div class="diff-card-identity">
                         <KsTaskIcon
                             :cls="block.type ?? ''"
-                            :icons="icons"
+                            :icons="pluginsStore.icons"
                             :onlyIcon="true"
                             class="diff-card-icon"
                         />
@@ -60,18 +60,14 @@
     import ArrowRight from "vue-material-design-icons/ArrowRight.vue"
     import {KsEmpty, KsTaskIcon} from "@kestra-io/design-system"
     import {computeRevisionDiff, type BlockChangeType, type RevisionDiff} from "../../utils/revisionDiff"
-
-    interface TaskIconEntry {
-        icon: string
-        flowable: boolean
-    }
+    import {usePluginsStore} from "../../stores/plugins"
 
     const {t} = useI18n()
+    const pluginsStore = usePluginsStore()
 
     const props = defineProps<{
         leftSource: string
         rightSource: string
-        icons?: Record<string, TaskIconEntry>
     }>()
 
     const diff = computed<RevisionDiff>(() => computeRevisionDiff(props.leftSource, props.rightSource))
@@ -213,7 +209,7 @@
     .diff-field-name {
         color: var(--ks-text-secondary);
         font-weight: 500;
-        min-width: 120px;
+        min-width: 10ch;
         flex-shrink: 0;
     }
 
@@ -226,10 +222,10 @@
     }
 
     .diff-value {
-        font-family: monospace;
+        font-family: var(--ks-font-family-mono);
         padding: 0 var(--ks-spacing-1);
         border-radius: var(--ks-radius-sm);
-        max-width: 300px;
+        max-width: 40ch;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;

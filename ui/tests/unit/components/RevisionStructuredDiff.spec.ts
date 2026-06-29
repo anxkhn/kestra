@@ -10,6 +10,10 @@ vi.mock("@kestra-io/design-system", async (importOriginal) => {
     }
 })
 
+vi.mock("../../../src/stores/plugins", () => ({
+    usePluginsStore: () => ({icons: {}}),
+}))
+
 import RevisionStructuredDiff from "../../../src/components/layout/RevisionStructuredDiff.vue"
 
 const i18n = createI18n({
