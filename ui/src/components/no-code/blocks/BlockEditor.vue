@@ -135,20 +135,25 @@
                     v-model="taskPickerSearch"
                     :placeholder="t('block_editor.search_task_placeholder')"
                     :aria-label="t('block_editor.search_task_placeholder')"
+                    aria-controls="block-editor-picker-listbox"
+                    :aria-activedescendant="pickerFocusedIndex >= 0 ? `block-editor-picker-option-${pickerFocusedIndex}` : undefined"
                     clearable
                     autofocus
                     data-test="block-editor-picker-search"
                 />
 
                 <div
+                    id="block-editor-picker-listbox"
                     v-ks-loading="pluginsLoading"
                     class="block-editor-picker-list"
                     :class="{'block-editor-picker-list--loading': pluginsLoading}"
+                    :aria-label="t('block_editor.pick_task_type')"
                     data-test="block-editor-picker-list"
                     role="listbox"
                 >
                     <button
                         v-for="(type, idx) in filteredCommonTypes"
+                        :id="`block-editor-picker-option-${idx}`"
                         :key="type.fqcn"
                         class="block-editor-picker-row"
                         :class="{'block-editor-picker-row--focused': pickerFocusedIndex === idx}"
@@ -167,7 +172,7 @@
                         <span class="block-editor-picker-fqcn">{{ type.fqcn }}</span>
                     </button>
 
-                    <p v-if="filteredCommonTypes.length === 0" class="block-editor-picker-empty">
+                    <p v-if="!pluginsLoading && filteredCommonTypes.length === 0" class="block-editor-picker-empty">
                         {{ t("block_editor.no_task_results") }}
                     </p>
                 </div>
@@ -191,6 +196,7 @@
         addBlock,
         addBlockAtPath,
         buildMinimalTask,
+        collectAllIds,
         deleteBlock,
         deleteBlockAtPath,
         duplicateBlock,
@@ -455,7 +461,7 @@
     }
 
     function insertTask(fqcn: string) {
-        const block = buildMinimalTask(fqcn)
+        const block = buildMinimalTask(fqcn, collectAllIds(flowYaml.value))
 
         if (taskPickerParentPath.value !== undefined) {
             applyYaml(addBlockAtPath(flowYaml.value, taskPickerParentPath.value, block, taskPickerAfterIndex.value))
@@ -511,7 +517,14 @@
             const syntheticPath = `${section}[${idx}]`
             applyYaml(moveBlockAtPath(flowYaml.value, syntheticPath, direction))
         } else {
-            applyYaml(moveBlockAtPath(flowYaml.value, path, direction))
+            const newYaml = moveBlockAtPath(flowYaml.value, path, direction)
+            if (newYaml === flowYaml.value) return
+            const match = path.match(/^(.*)\[(\d+)\]$/)
+            if (match) {
+                const newIndex = direction === "up" ? parseInt(match[2], 10) - 1 : parseInt(match[2], 10) + 1
+                editingBlock.value = {...editingBlock.value, path: `${match[1]}[${newIndex}]`}
+            }
+            applyYaml(newYaml)
         }
     }
 </script>

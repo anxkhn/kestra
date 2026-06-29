@@ -333,10 +333,11 @@ function parsePath(path: string): string[] {
 
 let taskCounter = 0
 
-export function buildMinimalTask(fqcn: string): Record<string, unknown> {
+export function buildMinimalTask(fqcn: string, existingIds?: Set<string>): Record<string, unknown> {
     const parts = fqcn.split(".")
     const shortName = parts[parts.length - 1] ?? "task"
-    const id = shortName.toLowerCase().replace(/[^a-z0-9]+/g, "_") + "_" + Date.now().toString(36) + (++taskCounter).toString(36)
+    const baseId = shortName.toLowerCase().replace(/[^a-z0-9]+/g, "_") + "_" + Date.now().toString(36) + (++taskCounter).toString(36)
+    const id = existingIds ? uniqueId(baseId, existingIds) : baseId
     return {id, type: fqcn}
 }
 

@@ -772,6 +772,44 @@ tasks:
             const parsed = flowYamlUtils.parse(result)
             expect(parsed.tasks[0].id).toBe("task_a")
         })
+
+        it("moves a task up within a Switch.cases lane, preserving the full cases map", () => {
+            // Given — prod case has prod_log at [0]; add a second task to make a movable pair
+            const withTwo = addBlockAtPath(
+                FLOW_WITH_SWITCH,
+                "tasks[0].cases.prod",
+                {id: "prod_second", type: "io.kestra.plugin.core.log.Log"},
+            )
+
+            // When — move prod_second (index 1) up
+            const result = moveBlockAtPath(withTwo, "tasks[0].cases.prod[1]", "up")
+
+            // Then — order swapped, other cases intact
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks[0].cases.prod[0].id).toBe("prod_second")
+            expect(parsed.tasks[0].cases.prod[1].id).toBe("prod_log")
+            expect(parsed.tasks[0].cases.dev).toHaveLength(1)
+            expect(parsed.tasks[0].cases.dev[0].id).toBe("dev_log")
+            expect(parsed.tasks[0].defaults[0].id).toBe("default_log")
+        })
+
+        it("moves a task down within a Switch.cases lane, preserving the full cases map", () => {
+            // Given — add a second task to prod so there are two
+            const withTwo = addBlockAtPath(
+                FLOW_WITH_SWITCH,
+                "tasks[0].cases.prod",
+                {id: "prod_second", type: "io.kestra.plugin.core.log.Log"},
+            )
+
+            // When — move prod_log (index 0) down
+            const result = moveBlockAtPath(withTwo, "tasks[0].cases.prod[0]", "down")
+
+            // Then — swapped, siblings untouched
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks[0].cases.prod[0].id).toBe("prod_second")
+            expect(parsed.tasks[0].cases.prod[1].id).toBe("prod_log")
+            expect(parsed.tasks[0].cases.dev[0].id).toBe("dev_log")
+        })
     })
 
     describe("buildMinimalTask", () => {
@@ -819,6 +857,31 @@ tasks:
             expect(parsed.tasks).toHaveLength(3)
             expect(parsed.tasks[2].type).toBe("io.kestra.plugin.core.flow.If")
             expect(typeof parsed.tasks[2].id).toBe("string")
+        })
+
+        it("avoids id collisions against existing flow ids when existingIds is provided", () => {
+            // Given — craft a flow where the generated base id would collide
+            const collisionFlow = `
+id: my_flow
+namespace: company.team
+tasks:
+  - id: log_mqyyq7rf1
+    type: io.kestra.plugin.core.log.Log
+`.trim()
+            const existingIds = new Set(["log_mqyyq7rf1"])
+
+            // When — build with the same base to force uniqueId to kick in
+            const task = buildMinimalTask("io.kestra.plugin.core.log.Log", existingIds)
+
+            // Then — the generated id is distinct from every id in existingIds
+            expect(existingIds.has(String(task.id))).toBe(false)
+            expect(String(task.id)).not.toBe("")
+
+            // And the resulting flow has no duplicate ids
+            const result = addBlock(collisionFlow, "tasks", task)
+            const parsed = flowYamlUtils.parse(result)
+            const ids = parsed.tasks.map((t: Record<string, unknown>) => String(t.id))
+            expect(new Set(ids).size).toBe(ids.length)
         })
     })
 

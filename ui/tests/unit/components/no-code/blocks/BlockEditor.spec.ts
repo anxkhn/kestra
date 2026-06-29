@@ -702,5 +702,47 @@ describe("BlockEditor", () => {
             expect(parsed.tasks[0].id).toBe("http_task")
             expect(parsed.tasks[1].id).toBe("log_task")
         })
+
+        it("two consecutive Alt+ArrowDown moves a nested block twice (same block, not different ones)", async () => {
+            // Given — YAML_WITH_FLOWABLE has if_block with nested_a in then[0] and nested_b in else[0]
+            // We need a then lane with at least 3 tasks so we can verify two moves from index 0
+            mockFlowYaml.value = `
+id: my_flow
+namespace: company.team
+tasks:
+  - id: if_block
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{ true }}"
+    then:
+      - id: then_a
+        type: io.kestra.plugin.core.log.Log
+      - id: then_b
+        type: io.kestra.plugin.core.log.Log
+      - id: then_c
+        type: io.kestra.plugin.core.log.Log
+`.trim()
+            const wrapper = mount(BlockEditor, makeConfig())
+            const cluster = wrapper.findComponent({name: "FlowableClusterCard"})
+
+            // Simulate selecting then_a (index 0 in then lane) via openNestedEdit path
+            await cluster.vm.$emit("select", "tasks[0].then[0]")
+            await wrapper.vm.$nextTick()
+            await wrapper.vm.$nextTick()
+
+            // When — first move: then_a goes from [0] to [1]
+            await wrapper.trigger("keydown", {key: "ArrowDown", altKey: true})
+            await wrapper.vm.$nextTick()
+
+            // When — second consecutive move: then_a should go from [1] to [2]
+            await wrapper.trigger("keydown", {key: "ArrowDown", altKey: true})
+            await wrapper.vm.$nextTick()
+
+            // Then — then_a has moved twice and is now at index 2
+            const {flowYamlUtils} = await import("@kestra-io/topology")
+            const parsed = flowYamlUtils.parse(mockFlowYaml.value)
+            expect(parsed.tasks[0].then[0].id).toBe("then_b")
+            expect(parsed.tasks[0].then[1].id).toBe("then_c")
+            expect(parsed.tasks[0].then[2].id).toBe("then_a")
+        })
     })
 })
