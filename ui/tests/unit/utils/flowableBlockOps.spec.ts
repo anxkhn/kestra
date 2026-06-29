@@ -1,6 +1,6 @@
 import {describe, it, expect} from "vitest"
 import {flowYamlUtils} from "@kestra-io/topology"
-import {addBlock, deleteBlock, duplicateBlock} from "../../../src/utils/flowableBlockOps"
+import {addBlock, deleteBlock, duplicateBlock, updateBlock} from "../../../src/utils/flowableBlockOps"
 
 const SIMPLE_FLOW = `
 id: my_flow
@@ -209,6 +209,64 @@ triggers:
 
             // When
             const result = duplicateBlock(SIMPLE_FLOW, "tasks", "nonexistent")
+
+            // Then
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks).toHaveLength(2)
+        })
+    })
+
+    describe("updateBlock", () => {
+        it("replaces a task's content by id leaving siblings untouched", () => {
+            // Given
+            const updatedYaml = "id: task_a\ntype: io.kestra.plugin.core.log.Log\nmessage: Updated"
+
+            // When
+            const result = updateBlock(SIMPLE_FLOW, "tasks", "task_a", updatedYaml)
+
+            // Then
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks).toHaveLength(2)
+            expect(parsed.tasks[0].message).toBe("Updated")
+            expect(parsed.tasks[1].id).toBe("task_b")
+            expect(parsed.tasks[1].message).toBe("World")
+        })
+
+        it("preserves nested branches of sibling flowable tasks when updating a leaf", () => {
+            // Given
+            const updatedYaml = "id: leaf_task\ntype: io.kestra.plugin.core.log.Log\nmessage: Changed"
+
+            // When
+            const result = updateBlock(FLOW_WITH_FLOWABLE, "tasks", "leaf_task", updatedYaml)
+
+            // Then
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.tasks[0].message).toBe("Changed")
+            const ifTask = parsed.tasks.find((t: Record<string, unknown>) => t.id === "if_task")
+            expect(ifTask.then).toHaveLength(1)
+            expect(ifTask.else).toHaveLength(1)
+            expect(ifTask.then[0].id).toBe("nested_a")
+            expect(ifTask.else[0].id).toBe("nested_b")
+        })
+
+        it("updates a trigger without affecting tasks", () => {
+            // Given
+            const updatedYaml = "id: webhook\ntype: io.kestra.plugin.core.trigger.Webhook\nkey: new-key"
+
+            // When
+            const result = updateBlock(FLOW_WITH_TRIGGERS, "triggers", "webhook", updatedYaml)
+
+            // Then
+            const parsed = flowYamlUtils.parse(result)
+            expect(parsed.triggers[0].key).toBe("new-key")
+            expect(parsed.tasks[0].id).toBe("log")
+        })
+
+        it("returns source unchanged when id is not found", () => {
+            // Given
+
+            // When
+            const result = updateBlock(SIMPLE_FLOW, "tasks", "nonexistent", "id: nonexistent\ntype: io.kestra.plugin.core.log.Log")
 
             // Then
             const parsed = flowYamlUtils.parse(result)

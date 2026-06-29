@@ -15,7 +15,7 @@
                         :block="task"
                         :selected="selectedId === String(task.id)"
                         :icons="pluginsStore.icons"
-                        @select="selectBlock(task.id)"
+                        @select="selectBlock('tasks', task)"
                         @delete="onDelete('tasks', task.id)"
                         @duplicate="onDuplicate('tasks', task.id)"
                     />
@@ -44,7 +44,7 @@
                         :block="trigger"
                         :selected="selectedId === String(trigger.id)"
                         :icons="pluginsStore.icons"
-                        @select="selectBlock(trigger.id)"
+                        @select="selectBlock('triggers', trigger)"
                         @delete="onDelete('triggers', trigger.id)"
                         @duplicate="onDuplicate('triggers', trigger.id)"
                     />
@@ -63,6 +63,20 @@
                 {{ t("block_editor.add_task") }}
             </button>
         </div>
+
+        <TaskEdit
+            v-if="editingBlock"
+            :key="editingBlock.id"
+            ref="taskEditRef"
+            :task="editingBlock.data"
+            :section="editingBlock.section"
+            :flowId="flowId"
+            :namespace="namespace"
+            :isHidden="true"
+            data-test="block-editor-task-edit"
+            @update:task="onTaskEdited"
+            @close="onEditorClose"
+        />
 
         <KsDialog
             v-model="taskPickerVisible"
@@ -103,7 +117,7 @@
 </template>
 
 <script setup lang="ts">
-    import {computed, ref} from "vue"
+    import {computed, nextTick, ref} from "vue"
     import {useI18n} from "vue-i18n"
     import PlusCircleOutline from "vue-material-design-icons/PlusCircleOutline.vue"
 
@@ -112,14 +126,17 @@
 
     import {useFlowStore} from "../../../stores/flow"
     import {usePluginsStore} from "../../../stores/plugins"
-    import {addBlock, deleteBlock, duplicateBlock, type BlockSection} from "../../../utils/flowableBlockOps"
+    import {addBlock, deleteBlock, duplicateBlock, updateBlock, type BlockSection} from "../../../utils/flowableBlockOps"
     import BlockCard from "./BlockCard.vue"
+    import TaskEdit from "../../flows/TaskEdit.vue"
 
     const {t} = useI18n()
     const flowStore = useFlowStore()
     const pluginsStore = usePluginsStore()
 
     const flowYaml = computed<string>(() => flowStore.flowYaml ?? "")
+    const flowId = computed<string>(() => flowStore.flow?.id ?? "")
+    const namespace = computed<string>(() => flowStore.flow?.namespace ?? "")
 
     const parsedFlow = computed(() => {
         try {
@@ -143,9 +160,34 @@
 
     const selectedId = ref<string | undefined>(undefined)
 
-    function selectBlock(id: unknown) {
-        const strId = id != null ? String(id) : undefined
-        selectedId.value = selectedId.value === strId ? undefined : strId
+    interface EditingBlock {
+        id: string
+        section: BlockSection
+        data: Record<string, unknown>
+    }
+
+    const editingBlock = ref<EditingBlock | undefined>(undefined)
+    const taskEditRef = ref<InstanceType<typeof TaskEdit>>()
+
+    async function selectBlock(section: BlockSection, block: Record<string, unknown>) {
+        const strId = block.id != null ? String(block.id) : undefined
+        if (!strId) return
+
+        if (selectedId.value === strId) {
+            selectedId.value = undefined
+            editingBlock.value = undefined
+            return
+        }
+
+        selectedId.value = strId
+        editingBlock.value = {id: strId, section, data: block}
+        await nextTick()
+        taskEditRef.value?.open()
+    }
+
+    function onEditorClose() {
+        selectedId.value = undefined
+        editingBlock.value = undefined
     }
 
     const onEditTimeout = ref<ReturnType<typeof setTimeout>>()
@@ -158,10 +200,21 @@
         }, 1000)
     }
 
+    function onTaskEdited(newContent: string) {
+        if (!editingBlock.value) return
+        const {section, id} = editingBlock.value
+        applyYaml(updateBlock(flowYaml.value, section, id, newContent))
+        editingBlock.value = undefined
+        selectedId.value = undefined
+    }
+
     function onDelete(section: BlockSection, id: unknown) {
         if (typeof id !== "string") return
         const newYaml = deleteBlock(flowYaml.value, section, id)
-        if (selectedId.value === id) selectedId.value = undefined
+        if (selectedId.value === id) {
+            selectedId.value = undefined
+            editingBlock.value = undefined
+        }
         applyYaml(newYaml)
     }
 

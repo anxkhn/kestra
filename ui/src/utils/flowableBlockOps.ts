@@ -2,6 +2,14 @@ import {flowYamlUtils} from "@kestra-io/topology"
 
 export type BlockSection = "tasks" | "triggers" | "errors" | "finally"
 
+export function updateBlock(source: string, section: BlockSection, id: string, newContent: string): string {
+    const existing = flowYamlUtils.extractBlock({source, section, key: id})
+    if (!existing) return source
+    const path = flowYamlUtils.getPathFromSectionAndId({source, section, id})
+    if (!path) return source
+    return flowYamlUtils.replaceBlockWithPath({source, path, newContent})
+}
+
 export interface BlockRef {
     section: BlockSection
     id: string

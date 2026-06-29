@@ -253,6 +253,8 @@
             activeTabs.value = props.readOnly ? "source" : "form"
         }
     })
+
+    defineExpose({open: onShow})
 </script>
 
 <style scoped lang="scss">
