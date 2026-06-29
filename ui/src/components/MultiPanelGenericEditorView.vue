@@ -2,12 +2,12 @@
     <div class="main-editor">
         <MultiPanelEditorTabs :tabs="editorElements" @update:tabs="setTabValue" :openTabs="openTabs">
             <div class="tabs-actions">
-                <KsTooltip :content="splitOrientation === 'vertical' ? t('split_horizontal') : t('split_vertical')" placement="bottom">
-                    <button class="orientation-toggle" :aria-label="splitOrientation === 'vertical' ? t('split_horizontal') : t('split_vertical')" @click="toggleOrientation">
-                        <ViewSplitVertical v-if="splitOrientation === 'vertical'" />
-                        <ViewSplitHorizontal v-else />
-                    </button>
-                </KsTooltip>
+                <KsButton
+                    :icon="splitOrientation === 'vertical' ? ViewSplitVertical : ViewSplitHorizontal"
+                    :tooltip="splitOrientation === 'vertical' ? t('split_horizontal') : t('split_vertical')"
+                    class="orientation-toggle"
+                    @click="toggleOrientation"
+                />
                 <slot name="actions" />
             </div>
         </MultiPanelEditorTabs>
@@ -160,24 +160,6 @@
         gap: var(--ks-spacing-1);
         padding: var(--ks-spacing-2) var(--ks-spacing-4);
         flex-shrink: 0;
-    }
-
-    .orientation-toggle {
-        background: transparent;
-        border: 1px solid transparent;
-        border-radius: var(--ks-radius-base);
-        padding: var(--ks-spacing-2);
-        color: var(--ks-text-secondary);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        aspect-ratio: 1 / 1;
-        transition: all 0.2s ease-in-out;
-
-        &:hover {
-            background-color: var(--ks-bg-base);
-        }
     }
 
     :deep(.editor-panels){

@@ -76,18 +76,7 @@ describe("InputsForm copy/drag affordances", () => {
         document.body.innerHTML = ""
     })
 
-    test("inputRefExpression produces the correct reference string", () => {
-        // Given: an input id
-        const wrapper = mountForm()
-
-        // When: the reference expression is generated
-        const expr = (wrapper.vm as any).inputRefExpression("myVar")
-
-        // Then: it wraps the id in the Pebble inputs expression
-        expect(expr).toBe("{{ inputs.myVar }}")
-    })
-
-    test("copyInputRef calls Utils.copy with the input reference expression", async () => {
+    test("copyInputRef calls Utils.copy with the correct Pebble reference expression", async () => {
         // Given: the component is mounted with an input "region"
         const wrapper = mountForm()
         await flushPromises()

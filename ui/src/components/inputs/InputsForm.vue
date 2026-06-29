@@ -26,15 +26,13 @@
                         @dragstart="onInputDragStart($event, input.id)"
                     >
                         <KsMarkdown :content="inputLabel(input)" class="d-inline-flex md-label" />
-                        <KsTooltip :content="t('copy_to_clipboard')" placement="top" :showAfter="500">
-                            <button
-                                class="input-copy-btn"
-                                :aria-label="t('copy_to_clipboard')"
-                                @click.prevent="copyInputRef(input.id)"
-                            >
-                                <ContentCopyIcon />
-                            </button>
-                        </KsTooltip>
+                        <KsButton
+                            type="text"
+                            :icon="ContentCopyIcon"
+                            :tooltip="t('copy_to_clipboard')"
+                            class="input-copy-btn"
+                            @click.prevent="copyInputRef(input.id)"
+                        />
                     </span>
                 </template>
                 <KsEditor
@@ -1026,7 +1024,6 @@
         onChange,
         copyInputRef,
         onInputDragStart,
-        inputRefExpression,
     })
 </script>
 
@@ -1041,21 +1038,8 @@
     gap: var(--ks-spacing-1);
 
     .input-copy-btn {
-        background: transparent;
-        border: none;
-        padding: var(--ks-spacing-1);
-        border-radius: var(--ks-radius-base);
-        color: var(--ks-text-muted);
-        display: inline-flex;
-        align-items: center;
-        cursor: pointer;
         opacity: 0;
-        transition: opacity 0.15s ease-in-out, color 0.15s ease-in-out;
-        font-size: var(--ks-font-size-sm);
-
-        &:hover {
-            color: var(--ks-text-secondary);
-        }
+        transition: opacity 0.15s ease-in-out;
     }
 
     &:hover .input-copy-btn,
