@@ -2351,7 +2351,7 @@
         "including_sub": "y sub-namespaces",
         "exact_match": "coincidencia exacta",
         "selected_trigger": "trigger seleccionado",
-        "execution": "Cuando un flow en el namespace {ns} ({scope}) alcanza el estado {states}, notificar via {channels}.",
+        "execution": "Cuando un flow en {ns} ({scope}) alcanza el estado {states}, notificar via {channels}.",
         "schedule": "Según programación \"{cron}\", notificar via {channels}.",
         "webhook": "Cuando se recibe un webhook, notificar via {channels}.",
         "other": "Cuando el trigger \"{trigger}\" se activa, notificar via {channels}."

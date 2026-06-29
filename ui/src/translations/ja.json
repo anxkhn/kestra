@@ -2351,7 +2351,7 @@
         "including_sub": "およびサブnamespace",
         "exact_match": "完全一致",
         "selected_trigger": "選択されたtrigger",
-        "execution": "namespace {ns} ({scope}) のflowが状態 {states} に達したとき、{channels} で通知します。",
+        "execution": "{ns} ({scope}) のflowが状態 {states} に達したとき、{channels} で通知します。",
         "schedule": "スケジュール「{cron}」で、{channels} で通知します。",
         "webhook": "webhookを受信したとき、{channels} で通知します。",
         "other": "trigger「{trigger}」が発火したとき、{channels} で通知します。"

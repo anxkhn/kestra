@@ -2351,7 +2351,7 @@
         "including_sub": "और उप-namespaces",
         "exact_match": "सटीक मिलान",
         "selected_trigger": "चयनित trigger",
-        "execution": "जब namespace {ns} ({scope}) में एक flow स्थिति {states} पर पहुंचे, {channels} के माध्यम से सूचित करें।",
+        "execution": "जब {ns} ({scope}) में एक flow स्थिति {states} पर पहुंचे, {channels} के माध्यम से सूचित करें।",
         "schedule": "शेड्यूल \"{cron}\" पर, {channels} के माध्यम से सूचित करें।",
         "webhook": "जब webhook प्राप्त हो, {channels} के माध्यम से सूचित करें।",
         "other": "जब trigger \"{trigger}\" सक्रिय हो, {channels} के माध्यम से सूचित करें।"

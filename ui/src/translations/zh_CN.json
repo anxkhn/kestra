@@ -2351,7 +2351,7 @@
         "including_sub": "及子namespace",
         "exact_match": "精确匹配",
         "selected_trigger": "已选trigger",
-        "execution": "当namespace {ns} ({scope})中的flow达到状态{states}时，通过{channels}通知。",
+        "execution": "当{ns} ({scope})中的flow达到状态{states}时，通过{channels}通知。",
         "schedule": "按计划\"{cron}\"，通过{channels}通知。",
         "webhook": "收到webhook时，通过{channels}通知。",
         "other": "当trigger\"{trigger}\"触发时，通过{channels}通知。"

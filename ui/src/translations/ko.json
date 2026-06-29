@@ -2351,7 +2351,7 @@
         "including_sub": "및 하위 namespace",
         "exact_match": "정확한 일치",
         "selected_trigger": "선택된 trigger",
-        "execution": "namespace {ns} ({scope})의 flow가 {states} 상태에 도달하면 {channels}를 통해 알림을 보냅니다.",
+        "execution": "{ns} ({scope})의 flow가 {states} 상태에 도달하면 {channels}를 통해 알림을 보냅니다.",
         "schedule": "일정 \"{cron}\"에 따라 {channels}를 통해 알림을 보냅니다.",
         "webhook": "webhook을 수신하면 {channels}를 통해 알림을 보냅니다.",
         "other": "trigger \"{trigger}\"가 실행되면 {channels}를 통해 알림을 보냅니다."
