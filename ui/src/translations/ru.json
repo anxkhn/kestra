@@ -2269,6 +2269,92 @@
     "workerId": "Worker Id",
     "workers": "Workers",
     "wrong labels": "Пустой key или value не допускается в метках",
-    "yes": "Да"
+    "yes": "Да",
+    "recipe": {
+      "section_title": "Создать системный flow",
+      "section_subtitle": "Создайте flow, который отслеживает вашу платформу и автоматически уведомляет команду.",
+      "blueprints_section_title": "Или начните с blueprint",
+      "create_flow": "Создать flow",
+      "email": "Электронная почта",
+      "when": {
+        "title": "КОГДА",
+        "subtitle": "Выберите, что запускает этот системный flow.",
+        "trigger_type": "Тип trigger"
+      },
+      "then": {
+        "title": "ТОГДА",
+        "subtitle": "Выберите способ уведомления команды.",
+        "no_channel_warning": "Выберите хотя бы один канал уведомлений."
+      },
+      "trigger": {
+        "execution_title": "Состояние execution",
+        "execution_sub": "Реагирует на изменения состояния flow",
+        "schedule_title": "Расписание",
+        "schedule_sub": "Выполняется по расписанию",
+        "case_title": "Статус случая",
+        "case_sub": "Только функция EE",
+        "webhook_title": "Webhook",
+        "webhook_sub": "Запускается HTTP-запросом",
+        "other_title": "Другой trigger",
+        "other_sub": "Любой доступный плагин trigger"
+      },
+      "execution": {
+        "watch_namespace": "Наблюдать за namespace",
+        "namespace_placeholder": "Выберите namespace",
+        "include_sub": "Включить дочерние namespaces",
+        "include_sub_hint_on": "Flow в дочерних namespaces также будут запускать это оповещение.",
+        "include_sub_hint_off": "Только flow в точном namespace будут запускать это оповещение.",
+        "states": "При этих состояниях",
+        "states_required": "Выберите хотя бы одно состояние."
+      },
+      "schedule": {
+        "frequency": "Частота",
+        "cron": "Cron-выражение",
+        "timezone": "Часовой пояс",
+        "timezone_placeholder": "Выберите часовой пояс (по умолчанию UTC)",
+        "daily": "Ежедневно",
+        "hourly": "Ежечасно",
+        "weekly": "Еженедельно",
+        "custom": "Настроить",
+        "daily_hint": "Запускается каждый день в 9:00.",
+        "hourly_hint": "Запускается каждый час в минуту 0.",
+        "weekly_hint": "Запускается каждый понедельник в 9:00."
+      },
+      "webhook": {
+        "key_label": "Ключ webhook",
+        "key_placeholder": "Введите уникальный ключ для этого webhook",
+        "endpoint_url": "URL конечной точки",
+        "endpoint_hint": "Отправьте POST-запрос на этот URL для запуска flow."
+      },
+      "other": {
+        "search_label": "Поиск triggers",
+        "search_placeholder": "Фильтр по имени или типу",
+        "no_results": "Triggers не найдены."
+      },
+      "notify": {
+        "slack_sub": "Опубликовать сообщение в канале Slack",
+        "teams_sub": "Отправить карточку в канал Teams",
+        "email_label": "Электронная почта",
+        "email_sub": "Отправить уведомление по электронной почте",
+        "slack_channel_placeholder": "#alerts",
+        "teams_webhook_placeholder": "URL входящего webhook Teams",
+        "email_to_placeholder": "recipient@your-domain.com"
+      },
+      "summary": {
+        "title": "Сводка",
+        "empty": "Настройте trigger и хотя бы один канал уведомлений для предварительного просмотра вашего flow.",
+        "invalid_hint": "Добавьте хотя бы один канал уведомлений и завершите настройку trigger.",
+        "yaml_preview": "Предварительный просмотр YAML",
+        "no_channel": "нет настроенного канала",
+        "any_namespace": "любой namespace",
+        "including_sub": "и дочерние namespaces",
+        "exact_match": "точное соответствие",
+        "selected_trigger": "выбранный trigger",
+        "execution": "Когда flow в namespace {ns} ({scope}) достигает состояния {states}, уведомить через {channels}.",
+        "schedule": "По расписанию \"{cron}\", уведомить через {channels}.",
+        "webhook": "При получении webhook, уведомить через {channels}.",
+        "other": "При срабатывании trigger \"{trigger}\", уведомить через {channels}."
+      }
+    }
   }
 }

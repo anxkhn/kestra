@@ -2269,6 +2269,92 @@
     "workerId": "Worker Id",
     "workers": "Workers",
     "wrong labels": "Clé ou valeur vide détecté dans les labels",
-    "yes": "Oui"
+    "yes": "Oui",
+    "recipe": {
+      "section_title": "Créer un flow système",
+      "section_subtitle": "Créez un flow qui surveille votre plateforme et notifie votre équipe automatiquement.",
+      "blueprints_section_title": "Ou commencez depuis un blueprint",
+      "create_flow": "Créer le flow",
+      "email": "E-mail",
+      "when": {
+        "title": "QUAND",
+        "subtitle": "Choisissez ce qui déclenche ce flow système.",
+        "trigger_type": "Type de trigger"
+      },
+      "then": {
+        "title": "ALORS",
+        "subtitle": "Sélectionnez comment notifier votre équipe.",
+        "no_channel_warning": "Sélectionnez au moins un canal de notification."
+      },
+      "trigger": {
+        "execution_title": "État d'exécution",
+        "execution_sub": "Réagit aux changements d'état du flow",
+        "schedule_title": "Planification",
+        "schedule_sub": "S'exécute selon un planning",
+        "case_title": "Statut du cas",
+        "case_sub": "Fonctionnalité EE uniquement",
+        "webhook_title": "Webhook",
+        "webhook_sub": "Déclenché par une requête HTTP",
+        "other_title": "Autre trigger",
+        "other_sub": "Tout plugin de trigger disponible"
+      },
+      "execution": {
+        "watch_namespace": "Surveiller le namespace",
+        "namespace_placeholder": "Sélectionner un namespace",
+        "include_sub": "Inclure les sous-namespaces",
+        "include_sub_hint_on": "Les flows des namespaces enfants déclencheront également cette alerte.",
+        "include_sub_hint_off": "Seuls les flows du namespace exact déclencheront cette alerte.",
+        "states": "Sur ces états",
+        "states_required": "Sélectionnez au moins un état."
+      },
+      "schedule": {
+        "frequency": "Fréquence",
+        "cron": "Expression cron",
+        "timezone": "Fuseau horaire",
+        "timezone_placeholder": "Sélectionner un fuseau horaire (par défaut UTC)",
+        "daily": "Quotidien",
+        "hourly": "Horaire",
+        "weekly": "Hebdomadaire",
+        "custom": "Personnalisé",
+        "daily_hint": "S'exécute chaque jour à 9h00.",
+        "hourly_hint": "S'exécute chaque heure à la minute 0.",
+        "weekly_hint": "S'exécute chaque lundi à 9h00."
+      },
+      "webhook": {
+        "key_label": "Clé du webhook",
+        "key_placeholder": "Entrez une clé unique pour ce webhook",
+        "endpoint_url": "URL du endpoint",
+        "endpoint_hint": "Envoyez une requête POST à cette URL pour déclencher le flow."
+      },
+      "other": {
+        "search_label": "Rechercher des triggers",
+        "search_placeholder": "Filtrer par nom ou type",
+        "no_results": "Aucun trigger trouvé."
+      },
+      "notify": {
+        "slack_sub": "Publier un message sur un canal Slack",
+        "teams_sub": "Envoyer une carte sur un canal Teams",
+        "email_label": "E-mail",
+        "email_sub": "Envoyer une notification par e-mail",
+        "slack_channel_placeholder": "#alertes",
+        "teams_webhook_placeholder": "URL du webhook entrant Teams",
+        "email_to_placeholder": "destinataire@votre-domaine.com"
+      },
+      "summary": {
+        "title": "Résumé",
+        "empty": "Configurez le trigger et au moins un canal de notification pour prévisualiser votre flow.",
+        "invalid_hint": "Ajoutez au moins un canal de notification et complétez la configuration du trigger.",
+        "yaml_preview": "Aperçu YAML",
+        "no_channel": "aucun canal configuré",
+        "any_namespace": "tout namespace",
+        "including_sub": "et sous-namespaces",
+        "exact_match": "correspondance exacte",
+        "selected_trigger": "trigger sélectionné",
+        "execution": "Lorsqu'un flow dans le namespace {ns} ({scope}) atteint l'état {states}, notifier via {channels}.",
+        "schedule": "Selon le planning \"{cron}\", notifier via {channels}.",
+        "webhook": "Lorsqu'un webhook est reçu, notifier via {channels}.",
+        "other": "Lorsque le trigger \"{trigger}\" se déclenche, notifier via {channels}."
+      }
+    }
   }
 }

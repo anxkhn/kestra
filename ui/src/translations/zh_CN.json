@@ -2269,6 +2269,92 @@
     "workerId": "工作者ID",
     "workers": "工作者",
     "wrong labels": "标签中不允许空键或值",
-    "yes": "是"
+    "yes": "是",
+    "recipe": {
+      "section_title": "创建系统flow",
+      "section_subtitle": "创建一个监控您的平台并自动通知团队的flow。",
+      "blueprints_section_title": "或从blueprint开始",
+      "create_flow": "创建flow",
+      "email": "电子邮件",
+      "when": {
+        "title": "当",
+        "subtitle": "选择触发此系统flow的条件。",
+        "trigger_type": "trigger类型"
+      },
+      "then": {
+        "title": "则",
+        "subtitle": "选择通知团队的方式。",
+        "no_channel_warning": "请至少选择一个通知渠道。"
+      },
+      "trigger": {
+        "execution_title": "execution状态",
+        "execution_sub": "响应flow状态变化",
+        "schedule_title": "计划",
+        "schedule_sub": "按时间计划运行",
+        "case_title": "案例状态",
+        "case_sub": "仅EE功能",
+        "webhook_title": "Webhook",
+        "webhook_sub": "由HTTP请求触发",
+        "other_title": "其他trigger",
+        "other_sub": "任何可用的trigger插件"
+      },
+      "execution": {
+        "watch_namespace": "监控namespace",
+        "namespace_placeholder": "选择namespace",
+        "include_sub": "包含子namespace",
+        "include_sub_hint_on": "子namespace中的flow也会触发此警报。",
+        "include_sub_hint_off": "只有精确namespace中的flow才会触发此警报。",
+        "states": "在这些状态时",
+        "states_required": "请至少选择一个状态。"
+      },
+      "schedule": {
+        "frequency": "频率",
+        "cron": "Cron表达式",
+        "timezone": "时区",
+        "timezone_placeholder": "选择时区（默认UTC）",
+        "daily": "每天",
+        "hourly": "每小时",
+        "weekly": "每周",
+        "custom": "自定义",
+        "daily_hint": "每天上午9点运行。",
+        "hourly_hint": "每小时第0分钟运行。",
+        "weekly_hint": "每周一上午9点运行。"
+      },
+      "webhook": {
+        "key_label": "Webhook key",
+        "key_placeholder": "为此webhook输入唯一key",
+        "endpoint_url": "端点URL",
+        "endpoint_hint": "向此URL发送POST请求以触发flow。"
+      },
+      "other": {
+        "search_label": "搜索trigger",
+        "search_placeholder": "按名称或类型过滤",
+        "no_results": "未找到trigger。"
+      },
+      "notify": {
+        "slack_sub": "向Slack频道发布消息",
+        "teams_sub": "向Teams频道发送卡片",
+        "email_label": "电子邮件",
+        "email_sub": "发送电子邮件通知",
+        "slack_channel_placeholder": "#alerts",
+        "teams_webhook_placeholder": "Teams incoming webhook URL",
+        "email_to_placeholder": "recipient@your-domain.com"
+      },
+      "summary": {
+        "title": "摘要",
+        "empty": "配置trigger和至少一个通知渠道以预览您的flow。",
+        "invalid_hint": "至少添加一个通知渠道并完成trigger配置。",
+        "yaml_preview": "YAML预览",
+        "no_channel": "未配置渠道",
+        "any_namespace": "任意namespace",
+        "including_sub": "及子namespace",
+        "exact_match": "精确匹配",
+        "selected_trigger": "已选trigger",
+        "execution": "当namespace {ns} ({scope})中的flow达到状态{states}时，通过{channels}通知。",
+        "schedule": "按计划\"{cron}\"，通过{channels}通知。",
+        "webhook": "收到webhook时，通过{channels}通知。",
+        "other": "当trigger\"{trigger}\"触发时，通过{channels}通知。"
+      }
+    }
   }
 }

@@ -39,6 +39,7 @@
     const onboardingV2Store = useOnboardingV2Store()
     const miscStore = useMiscStore()
     const ONBOARDING_FLOW_PRESET_KEY = "kestra.onboarding.flowPreset"
+    const RECIPE_PRESET_KEY = "kestra.recipe.flowPreset"
 
     const defaultFlowTemplate = (id: string, namespace: string) => {
         const configuredTemplate = miscStore.configs?.flowTemplate
@@ -81,6 +82,9 @@ tasks:
         const onboardingPresetFlow = route.query.onboardingPreset === "true"
             ? sessionStorage.getItem(ONBOARDING_FLOW_PRESET_KEY) ?? ""
             : ""
+        const recipePresetFlow = route.query.recipePreset === "true"
+            ? sessionStorage.getItem(RECIPE_PRESET_KEY) ?? ""
+            : ""
         const implicitDefaultNamespace = authStore.user?.getNamespacesForAction(
             resource.FLOW,
             action.CREATE,
@@ -95,6 +99,9 @@ tasks:
 
         if (route.query.copy && flowStore.flow) {
             flowYaml = flowStore.flow.source
+        } else if (recipePresetFlow) {
+            flowYaml = recipePresetFlow
+            sessionStorage.removeItem(RECIPE_PRESET_KEY)
         } else if (onboardingPresetFlow) {
             flowYaml = onboardingPresetFlow
             sessionStorage.removeItem(ONBOARDING_FLOW_PRESET_KEY)

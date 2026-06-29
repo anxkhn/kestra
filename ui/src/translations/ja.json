@@ -2269,6 +2269,92 @@
     "workerId": "Worker Id",
     "workers": "Workers",
     "wrong labels": "ラベルには空のkeyまたはvalueを設定できません",
-    "yes": "はい"
+    "yes": "はい",
+    "recipe": {
+      "section_title": "システムflowを作成する",
+      "section_subtitle": "プラットフォームを監視し、チームに自動的に通知するflowを作成します。",
+      "blueprints_section_title": "またはblueprintから開始する",
+      "create_flow": "flowを作成",
+      "email": "メール",
+      "when": {
+        "title": "いつ",
+        "subtitle": "このシステムflowをトリガーするものを選択します。",
+        "trigger_type": "triggerの種類"
+      },
+      "then": {
+        "title": "そのとき",
+        "subtitle": "チームへの通知方法を選択します。",
+        "no_channel_warning": "少なくとも1つの通知チャンネルを選択してください。"
+      },
+      "trigger": {
+        "execution_title": "execution状態",
+        "execution_sub": "flowの状態変化に反応します",
+        "schedule_title": "スケジュール",
+        "schedule_sub": "時間スケジュールで実行されます",
+        "case_title": "ケースステータス",
+        "case_sub": "EE専用機能",
+        "webhook_title": "Webhook",
+        "webhook_sub": "HTTPリクエストによってトリガーされます",
+        "other_title": "その他のtrigger",
+        "other_sub": "利用可能な任意のtriggerプラグイン"
+      },
+      "execution": {
+        "watch_namespace": "namespaceを監視",
+        "namespace_placeholder": "namespaceを選択",
+        "include_sub": "サブnamespaceを含める",
+        "include_sub_hint_on": "子namespaceのflowもこのアラートをトリガーします。",
+        "include_sub_hint_off": "正確なnamespaceのflowのみがこのアラートをトリガーします。",
+        "states": "これらの状態のとき",
+        "states_required": "少なくとも1つの状態を選択してください。"
+      },
+      "schedule": {
+        "frequency": "頻度",
+        "cron": "Cron式",
+        "timezone": "タイムゾーン",
+        "timezone_placeholder": "タイムゾーンを選択（デフォルトUTC）",
+        "daily": "毎日",
+        "hourly": "毎時",
+        "weekly": "毎週",
+        "custom": "カスタム",
+        "daily_hint": "毎日9:00に実行されます。",
+        "hourly_hint": "毎時0分に実行されます。",
+        "weekly_hint": "毎週月曜日9:00に実行されます。"
+      },
+      "webhook": {
+        "key_label": "Webhookキー",
+        "key_placeholder": "このwebhookのユニークなキーを入力",
+        "endpoint_url": "エンドポイントURL",
+        "endpoint_hint": "このURLにPOSTリクエストを送信してflowをトリガーします。"
+      },
+      "other": {
+        "search_label": "triggerを検索",
+        "search_placeholder": "名前またはタイプでフィルター",
+        "no_results": "triggerが見つかりません。"
+      },
+      "notify": {
+        "slack_sub": "Slackチャンネルにメッセージを投稿",
+        "teams_sub": "Teamsチャンネルにカードを送信",
+        "email_label": "メール",
+        "email_sub": "メール通知を送信",
+        "slack_channel_placeholder": "#alerts",
+        "teams_webhook_placeholder": "Teamsの受信webhookURL",
+        "email_to_placeholder": "recipient@your-domain.com"
+      },
+      "summary": {
+        "title": "サマリー",
+        "empty": "flowのプレビューを表示するには、triggerと少なくとも1つの通知チャンネルを設定してください。",
+        "invalid_hint": "少なくとも1つの通知チャンネルを追加し、trigger設定を完了してください。",
+        "yaml_preview": "YAMLプレビュー",
+        "no_channel": "チャンネル未設定",
+        "any_namespace": "任意のnamespace",
+        "including_sub": "およびサブnamespace",
+        "exact_match": "完全一致",
+        "selected_trigger": "選択されたtrigger",
+        "execution": "namespace {ns} ({scope}) のflowが状態 {states} に達したとき、{channels} で通知します。",
+        "schedule": "スケジュール「{cron}」で、{channels} で通知します。",
+        "webhook": "webhookを受信したとき、{channels} で通知します。",
+        "other": "trigger「{trigger}」が発火したとき、{channels} で通知します。"
+      }
+    }
   }
 }
