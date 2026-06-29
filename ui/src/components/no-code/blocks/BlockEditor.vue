@@ -67,7 +67,6 @@
         <KsDialog
             v-model="taskPickerVisible"
             :title="t('block_editor.pick_task_type')"
-            width="480px"
         >
             <div class="block-editor-picker">
                 <KsInput
@@ -149,9 +148,14 @@
         selectedId.value = selectedId.value === strId ? undefined : strId
     }
 
+    const onEditTimeout = ref<ReturnType<typeof setTimeout>>()
+
     function applyYaml(newYaml: string) {
         flowStore.flowYaml = newYaml
-        flowStore.onEdit({source: newYaml, topologyVisible: true})
+        clearTimeout(onEditTimeout.value)
+        onEditTimeout.value = setTimeout(() => {
+            flowStore.onEdit({source: newYaml, topologyVisible: true})
+        }, 1000)
     }
 
     function onDelete(section: BlockSection, id: unknown) {
@@ -310,7 +314,7 @@
     .block-editor-picker-fqcn {
         font-size: var(--ks-font-size-xs);
         color: var(--ks-text-muted);
-        font-family: monospace;
+        font-family: var(--ks-font-family-mono);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;

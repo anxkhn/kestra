@@ -178,6 +178,32 @@ tasks:
             expect(ids).toContain("task_a_copy_2")
         })
 
+        it("avoids cross-section id collision when duplicating a trigger whose copy id exists in tasks", () => {
+            // Given — task already has id "webhook_copy"; trigger id "webhook" will produce "webhook_copy"
+            const flowWithCrossCollision = `
+id: my_flow
+namespace: company.team
+tasks:
+  - id: webhook_copy
+    type: io.kestra.plugin.core.log.Log
+    message: same id as the upcoming trigger duplicate
+triggers:
+  - id: webhook
+    type: io.kestra.plugin.core.trigger.Webhook
+    key: abc
+`.trim()
+
+            // When
+            const result = duplicateBlock(flowWithCrossCollision, "triggers", "webhook")
+
+            // Then — "webhook_copy" is taken by the task so the trigger copy must get a different id
+            const parsed = flowYamlUtils.parse(result)
+            const triggerIds = parsed.triggers.map((t: Record<string, unknown>) => String(t.id))
+            expect(triggerIds).toContain("webhook")
+            expect(triggerIds).not.toContain("webhook_copy")
+            expect(triggerIds.some((id: string) => id.startsWith("webhook_copy_"))).toBe(true)
+        })
+
         it("returns source unchanged when id is not found", () => {
             // Given
 

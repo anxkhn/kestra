@@ -1,5 +1,6 @@
 import type {Meta, StoryObj} from "@storybook/vue3-vite"
 import BlockEditor from "../../../src/components/no-code/blocks/BlockEditor.vue"
+import {useFlowStore} from "../../../src/stores/flow"
 
 const EMPTY_YAML = "id: my_flow\nnamespace: company.team"
 
@@ -74,8 +75,10 @@ const meta: Meta<typeof BlockEditor> = {
 export default meta
 type Story = StoryObj<typeof BlockEditor>
 
-const makeRender = (_yaml: string): Story["render"] => () => ({
+const makeRender = (yaml: string): Story["render"] => () => ({
     setup() {
+        const flowStore = useFlowStore()
+        flowStore.flowYaml = yaml
         return () => (
             <div style="height: 600px; border: 1px solid var(--ks-border-default); border-radius: var(--ks-radius-base); overflow: hidden;">
                 <BlockEditor />

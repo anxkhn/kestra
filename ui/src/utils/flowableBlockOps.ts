@@ -37,7 +37,7 @@ export function duplicateBlock(source: string, section: BlockSection, id: string
     const parsed = flowYamlUtils.parse<Record<string, unknown>>(blockYaml)
     if (!parsed) return source
 
-    const existingIds = collectIds(source, section)
+    const existingIds = collectIds(source)
     const baseId = `${parsed.id}_copy`
     let newId = baseId
     let counter = 2
@@ -60,15 +60,19 @@ export function duplicateBlock(source: string, section: BlockSection, id: string
     })
 }
 
-function collectIds(source: string, section: BlockSection): Set<string> {
+const ALL_SECTIONS: BlockSection[] = ["tasks", "triggers", "errors", "finally"]
+
+function collectIds(source: string): Set<string> {
     const ids = new Set<string>()
     try {
         const parsed = flowYamlUtils.parse<Record<string, unknown>>(source)
-        const items = parsed?.[section]
-        if (!Array.isArray(items)) return ids
-        for (const item of items) {
-            if (item && typeof item === "object" && "id" in item) {
-                ids.add(String((item as Record<string, unknown>).id))
+        for (const section of ALL_SECTIONS) {
+            const items = parsed?.[section]
+            if (!Array.isArray(items)) continue
+            for (const item of items) {
+                if (item && typeof item === "object" && "id" in item) {
+                    ids.add(String((item as Record<string, unknown>).id))
+                }
             }
         }
     } catch {

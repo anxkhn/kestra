@@ -33,29 +33,25 @@
         >{{ t("block_editor.flowable_todo") }}</span>
 
         <div class="block-card-actions">
-            <button
+            <KsIconButton
                 class="block-card-action"
-                type="button"
                 :aria-label="t('block_editor.duplicate')"
-                :title="t('block_editor.duplicate')"
+                :tooltip="t('block_editor.duplicate')"
                 data-test="block-card-duplicate"
                 @click.stop="emit('duplicate')"
-                @keydown.enter.stop.prevent="emit('duplicate')"
             >
-                <ContentCopy class="block-card-action-icon" />
-            </button>
+                <ContentCopy />
+            </KsIconButton>
 
-            <button
+            <KsIconButton
                 class="block-card-action block-card-action--danger"
-                type="button"
                 :aria-label="t('block_editor.delete')"
-                :title="t('block_editor.delete')"
+                :tooltip="t('block_editor.delete')"
                 data-test="block-card-delete"
                 @click.stop="emit('delete')"
-                @keydown.enter.stop.prevent="emit('delete')"
             >
-                <DeleteOutline class="block-card-action-icon" />
-            </button>
+                <DeleteOutline />
+            </KsIconButton>
         </div>
     </div>
 </template>
@@ -66,7 +62,7 @@
     import ContentCopy from "vue-material-design-icons/ContentCopy.vue"
     import DeleteOutline from "vue-material-design-icons/DeleteOutline.vue"
 
-    import {KsTaskIcon} from "@kestra-io/design-system"
+    import {KsTaskIcon, KsIconButton} from "@kestra-io/design-system"
 
     const {t} = useI18n()
 
@@ -88,7 +84,7 @@
         const type = String(props.block.type ?? "")
         const iconEntry = props.icons?.[type]
         if (iconEntry) return iconEntry.flowable
-        return FLOWABLE_SUFFIXES.some(suffix => type.endsWith(`.${suffix}`) || type.endsWith(suffix))
+        return FLOWABLE_SUFFIXES.some(suffix => type.endsWith(`.${suffix}`))
     })
 
     const nestedCount = computed(() => {
@@ -163,7 +159,7 @@
     .block-card-type {
         font-size: var(--ks-font-size-xs);
         color: var(--ks-text-secondary);
-        font-family: monospace;
+        font-family: var(--ks-font-family-mono);
         flex-shrink: 0;
     }
 
@@ -195,30 +191,8 @@
     }
 
     .block-card-action {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 1.5rem;
-        height: 1.5rem;
-        border: none;
-        border-radius: var(--ks-radius-sm);
-        background: transparent;
-        color: var(--ks-icon-default);
-        cursor: pointer;
-        transition: background-color 0.15s, color 0.15s;
-
-        &:hover {
-            background: var(--ks-bg-hover-elevated);
-            color: var(--ks-text-primary);
-        }
-
         &--danger:hover {
             color: var(--ks-text-error);
         }
-    }
-
-    .block-card-action-icon {
-        font-size: 1rem;
-        display: flex;
     }
 </style>

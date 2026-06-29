@@ -111,6 +111,10 @@ const globalConfig = {
                 emits: ["update:modelValue"],
             },
             KsInput: {template: "<input data-test='ks-input' />"},
+            KsIconButton: {
+                template: "<button v-bind='$attrs'><slot /></button>",
+                inheritAttrs: false,
+            },
         },
     },
 }
