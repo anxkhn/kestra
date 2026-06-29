@@ -4,14 +4,18 @@
             v-for="channel in channels"
             :key="channel.key"
             class="notify-card"
-            :class="{selected: recipe.notify[channel.key as keyof typeof recipe.notify]}"
+            :class="{
+                selected: recipe.notify[channel.key as keyof typeof recipe.notify],
+                unavailable: !channelAvailability[channel.key as keyof typeof channelAvailability],
+            }"
             role="checkbox"
             :aria-checked="recipe.notify[channel.key as keyof typeof recipe.notify]"
+            :aria-disabled="!channelAvailability[channel.key as keyof typeof channelAvailability]"
             :aria-label="channel.label"
-            tabindex="0"
-            @click="toggleChannel(channel.key)"
-            @keydown.enter="toggleChannel(channel.key)"
-            @keydown.space.prevent="toggleChannel(channel.key)"
+            :tabindex="channelAvailability[channel.key as keyof typeof channelAvailability] ? 0 : -1"
+            @click="channelAvailability[channel.key as keyof typeof channelAvailability] && toggleNotify(channel.key as keyof typeof recipe.notify)"
+            @keydown.enter="channelAvailability[channel.key as keyof typeof channelAvailability] && toggleNotify(channel.key as keyof typeof recipe.notify)"
+            @keydown.space.prevent="channelAvailability[channel.key as keyof typeof channelAvailability] && toggleNotify(channel.key as keyof typeof recipe.notify)"
         >
             <div class="card-header">
                 <div class="icon-wrap">
@@ -19,12 +23,15 @@
                 </div>
                 <KsCheckbox
                     :modelValue="recipe.notify[channel.key as keyof typeof recipe.notify]"
-                    style="pointer-events: none;"
+                    class="checkbox-passive"
                     :aria-hidden="true"
                 />
             </div>
             <span class="channel-label">{{ channel.label }}</span>
             <span class="channel-sub">{{ channel.sub }}</span>
+            <span v-if="!channelAvailability[channel.key as keyof typeof channelAvailability]" class="unavailable-note">
+                {{ $t("recipe.notify.plugin_unavailable") }}
+            </span>
 
             <div v-if="recipe.notify[channel.key as keyof typeof recipe.notify]" class="channel-config" @click.stop>
                 <KsInput
@@ -59,6 +66,8 @@
 
     const props = defineProps<{
         recipe: RecipeState
+        channelAvailability: {slack: boolean; teams: boolean; email: boolean}
+        toggleNotify: (key: keyof RecipeState["notify"]) => void
     }>()
 
     const {t} = useI18n()
@@ -83,11 +92,6 @@
             icon: "email-outline",
         },
     ]
-
-    const toggleChannel = (key: string) => {
-        const k = key as keyof typeof props.recipe.notify
-        props.recipe.notify[k] = !props.recipe.notify[k]
-    }
 </script>
 
 <style scoped lang="scss">
@@ -107,7 +111,7 @@
         cursor: pointer;
         transition: border-color 0.15s, background-color 0.15s;
 
-        &:hover {
+        &:hover:not(.unavailable) {
             border-color: var(--ks-border-strong);
             background-color: var(--ks-bg-hover);
         }
@@ -115,6 +119,11 @@
         &.selected {
             border-color: var(--ks-border-focus);
             background-color: var(--ks-bg-tag-active);
+        }
+
+        &.unavailable {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
     }
 
@@ -138,6 +147,10 @@
         color: var(--ks-text-primary);
     }
 
+    .checkbox-passive {
+        pointer-events: none;
+    }
+
     .channel-label {
         display: block;
         font-weight: var(--ks-font-weight-medium);
@@ -147,6 +160,12 @@
         display: block;
         font-size: var(--ks-font-size-sm);
         color: var(--ks-text-secondary);
+    }
+
+    .unavailable-note {
+        display: block;
+        font-size: var(--ks-font-size-xs);
+        color: var(--ks-text-warning);
     }
 
     .channel-config {

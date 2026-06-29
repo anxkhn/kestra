@@ -2338,7 +2338,8 @@
         "email_sub": "Invia una notifica via email",
         "slack_channel_placeholder": "#alerts",
         "teams_webhook_placeholder": "URL webhook in entrata Teams",
-        "email_to_placeholder": "destinatario@tuo-dominio.com"
+        "email_to_placeholder": "destinatario@tuo-dominio.com",
+        "plugin_unavailable": "Plugin non installato"
       },
       "summary": {
         "title": "Riepilogo",

@@ -2338,7 +2338,8 @@
         "email_sub": "メール通知を送信",
         "slack_channel_placeholder": "#alerts",
         "teams_webhook_placeholder": "Teamsの受信webhookURL",
-        "email_to_placeholder": "recipient@your-domain.com"
+        "email_to_placeholder": "recipient@your-domain.com",
+        "plugin_unavailable": "プラグインがインストールされていません"
       },
       "summary": {
         "title": "サマリー",

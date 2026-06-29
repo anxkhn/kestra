@@ -2338,7 +2338,8 @@
         "email_sub": "이메일 알림 전송",
         "slack_channel_placeholder": "#alerts",
         "teams_webhook_placeholder": "Teams 수신 webhook URL",
-        "email_to_placeholder": "recipient@your-domain.com"
+        "email_to_placeholder": "recipient@your-domain.com",
+        "plugin_unavailable": "플러그인이 설치되지 않음"
       },
       "summary": {
         "title": "요약",

@@ -2,6 +2,8 @@ import {flowYamlUtils} from "@kestra-io/topology"
 
 export type TriggerType = "execution" | "schedule" | "webhook" | "other"
 
+export const SYSTEM_FLOW_RECIPE_ID = "system-flow-alert"
+
 export interface RecipeState {
     triggerType: TriggerType
     watchNamespace: string
@@ -26,7 +28,7 @@ interface NotifyTaskConfig {
     webhookFqcn: string
 }
 
-const NOTIFY_TASK_CONFIGS: Record<string, NotifyTaskConfig> = {
+export const NOTIFY_TASK_CONFIGS: Record<string, NotifyTaskConfig> = {
     slack: {
         executionFqcn: "io.kestra.plugin.slack.notifications.SlackExecution",
         webhookFqcn: "io.kestra.plugin.slack.notifications.SlackIncomingWebhook",
@@ -98,7 +100,7 @@ function buildOtherTrigger(state: RecipeState): object[] {
     ]
 }
 
-function buildNotifyTasks(state: RecipeState, isExecutionTrigger: boolean): object[] {
+function buildNotifyTasks(state: RecipeState, isExecutionTrigger: boolean, availableFqcns: Set<string>): object[] {
     const tasks: object[] = []
 
     if (state.notify.slack) {
@@ -106,18 +108,20 @@ function buildNotifyTasks(state: RecipeState, isExecutionTrigger: boolean): obje
             ? NOTIFY_TASK_CONFIGS.slack.executionFqcn
             : NOTIFY_TASK_CONFIGS.slack.webhookFqcn
 
-        const task: Record<string, unknown> = {
-            id: "notify_slack",
-            type: fqcn,
-            url: "{{ secret('SLACK_WEBHOOK') }}",
-            channel: state.slackChannel || "#alerts",
+        if (availableFqcns.size === 0 || availableFqcns.has(fqcn)) {
+            const task: Record<string, unknown> = {
+                id: "notify_slack",
+                type: fqcn,
+                url: "{{ secret('SLACK_WEBHOOK') }}",
+                channel: state.slackChannel || "#alerts",
+            }
+            if (isExecutionTrigger) {
+                task.executionId = "{{ trigger.executionId }}"
+            } else {
+                task.payload = "{\"text\": \"Flow {{ flow.id }} triggered\"}"
+            }
+            tasks.push(task)
         }
-        if (isExecutionTrigger) {
-            task.executionId = "{{ trigger.executionId }}"
-        } else {
-            task.payload = "{\"text\": \"Flow triggered\"}"
-        }
-        tasks.push(task)
     }
 
     if (state.notify.teams) {
@@ -125,39 +129,51 @@ function buildNotifyTasks(state: RecipeState, isExecutionTrigger: boolean): obje
             ? NOTIFY_TASK_CONFIGS.teams.executionFqcn
             : NOTIFY_TASK_CONFIGS.teams.webhookFqcn
 
-        const task: Record<string, unknown> = {
-            id: "notify_teams",
-            type: fqcn,
-            url: state.teamsWebhook || "{{ secret('TEAMS_WEBHOOK') }}",
+        if (availableFqcns.size === 0 || availableFqcns.has(fqcn)) {
+            const task: Record<string, unknown> = {
+                id: "notify_teams",
+                type: fqcn,
+                url: state.teamsWebhook || "{{ secret('TEAMS_WEBHOOK') }}",
+            }
+            if (isExecutionTrigger) {
+                task.executionId = "{{ trigger.executionId }}"
+            } else {
+                task.message = "Flow {{ flow.id }} triggered"
+            }
+            tasks.push(task)
         }
-        if (isExecutionTrigger) {
-            task.executionId = "{{ trigger.executionId }}"
-        } else {
-            task.message = "Flow {{ flow.id }} triggered"
-        }
-        tasks.push(task)
     }
 
     if (state.notify.email) {
-        const task: Record<string, unknown> = {
-            id: "notify_email",
-            type: NOTIFY_TASK_CONFIGS.email.executionFqcn,
-            from: "kestra@your-domain.com",
-            to: [state.emailTo || "team@your-domain.com"],
-            subject: "Flow {{ flow.id }} notification",
-            htmlTextContent: isExecutionTrigger
-                ? "Execution {{ trigger.executionId }} completed with state {{ trigger.state }}."
-                : "Flow {{ flow.id }} was triggered.",
+        const fqcn = isExecutionTrigger
+            ? NOTIFY_TASK_CONFIGS.email.executionFqcn
+            : NOTIFY_TASK_CONFIGS.email.webhookFqcn
+
+        if (availableFqcns.size === 0 || availableFqcns.has(fqcn)) {
+            const task: Record<string, unknown> = {
+                id: "notify_email",
+                type: fqcn,
+                from: "kestra@your-domain.com",
+                to: [state.emailTo || "team@your-domain.com"],
+                subject: "Flow {{ flow.id }} notification",
+                htmlTextContent: isExecutionTrigger
+                    ? "Execution {{ trigger.executionId }} completed with state {{ trigger.state }}."
+                    : "Flow {{ flow.id }} was triggered.",
+            }
+            tasks.push(task)
         }
-        tasks.push(task)
     }
 
     return tasks
 }
 
-export function recipeToFlowObject(state: RecipeState, systemNamespace: string): Record<string, unknown> {
+export function recipeToFlowObject(
+    state: RecipeState,
+    systemNamespace: string,
+    availableFqcns: Set<string> = new Set(),
+): Record<string, unknown> {
     const isExecutionTrigger = state.triggerType === "execution"
-    const tasks = buildNotifyTasks(state, isExecutionTrigger)
+    const tasks = buildNotifyTasks(state, isExecutionTrigger, availableFqcns)
 
     let triggers: object[]
     switch (state.triggerType) {
@@ -178,7 +194,7 @@ export function recipeToFlowObject(state: RecipeState, systemNamespace: string):
     }
 
     const flowObj: Record<string, unknown> = {
-        id: "system-flow-alert",
+        id: SYSTEM_FLOW_RECIPE_ID,
         namespace: systemNamespace,
         tasks: tasks.length > 0 ? tasks : [{id: "placeholder", type: "io.kestra.plugin.core.log.Log", message: "Configure your notification tasks"}],
         triggers,
@@ -187,7 +203,7 @@ export function recipeToFlowObject(state: RecipeState, systemNamespace: string):
     return flowObj
 }
 
-export function recipeToYaml(state: RecipeState, systemNamespace: string): string {
-    const flowObj = recipeToFlowObject(state, systemNamespace)
+export function recipeToYaml(state: RecipeState, systemNamespace: string, availableFqcns: Set<string> = new Set()): string {
+    const flowObj = recipeToFlowObject(state, systemNamespace, availableFqcns)
     return flowYamlUtils.stringify(flowObj)
 }

@@ -19,6 +19,7 @@
     import {useMiscStore} from "override/stores/misc"
     import FlowRecipe from "./recipe/FlowRecipe.vue"
     import BlueprintsBrowser from "./blueprints/BlueprintsBrowser.vue"
+    import {RECIPE_PRESET_KEY} from "../../utils/storageKeys"
 
     const props = withDefaults(defineProps<{
         namespace?: string
@@ -29,8 +30,6 @@
     const miscStore = useMiscStore()
     const router = useRouter()
     const route = useRoute()
-
-    const RECIPE_PRESET_KEY = "kestra.recipe.flowPreset"
 
     const systemNamespace = computed(() => props.namespace ?? miscStore.configs?.systemNamespace ?? "system")
 

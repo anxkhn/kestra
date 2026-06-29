@@ -2338,7 +2338,8 @@
         "email_sub": "Отправить уведомление по электронной почте",
         "slack_channel_placeholder": "#alerts",
         "teams_webhook_placeholder": "URL входящего webhook Teams",
-        "email_to_placeholder": "recipient@your-domain.com"
+        "email_to_placeholder": "recipient@your-domain.com",
+        "plugin_unavailable": "Плагин не установлен"
       },
       "summary": {
         "title": "Сводка",

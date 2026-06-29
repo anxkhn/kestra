@@ -53,21 +53,13 @@
     import {STATES} from "@kestra-io/design-system"
     import type {RecipeState} from "../../../../composables/useFlowRecipe"
 
-    const props = defineProps<{
+    defineProps<{
         recipe: RecipeState
         namespaceOptions: string[]
+        toggleState: (stateName: string) => void
     }>()
 
     const watchableStates = ["FAILED", "WARNING", "SUCCESS", "KILLED", "PAUSED"]
-
-    const toggleState = (stateName: string) => {
-        const idx = props.recipe.states.indexOf(stateName)
-        if (idx === -1) {
-            props.recipe.states.push(stateName)
-        } else {
-            props.recipe.states.splice(idx, 1)
-        }
-    }
 </script>
 
 <style scoped lang="scss">

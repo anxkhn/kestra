@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest"
 import {flowYamlUtils} from "@kestra-io/topology"
-import {recipeToFlowObject, recipeToYaml, type RecipeState} from "../../../src/utils/recipeToYaml"
+import {recipeToFlowObject, recipeToYaml, SYSTEM_FLOW_RECIPE_ID, type RecipeState} from "../../../src/utils/recipeToYaml"
 
 const baseState = (): RecipeState => ({
     triggerType: "execution",
@@ -111,6 +111,21 @@ describe("recipeToYaml", () => {
             expect(taskTypes).toContain("io.kestra.plugin.microsoft365.teams.TeamsExecution")
             expect(taskTypes).toContain("io.kestra.plugin.email.MailSend")
         })
+
+        it("email uses executionFqcn for execution trigger", () => {
+            // Given
+            const state = baseState()
+            state.notify.email = true
+
+            // When
+            const yaml = recipeToYaml(state, "system")
+
+            // Then
+            const parsed = flowYamlUtils.parse(yaml)
+            const emailTask = parsed.tasks.find((t: any) => t.id === "notify_email")
+            expect(emailTask.type).toBe("io.kestra.plugin.email.MailSend")
+            expect(emailTask.htmlTextContent).toContain("trigger.executionId")
+        })
     })
 
     describe("schedule trigger", () => {
@@ -130,6 +145,21 @@ describe("recipeToYaml", () => {
             expect(slackTask.executionId).toBeUndefined()
         })
 
+        it("slack IncomingWebhook payload includes flow context", () => {
+            // Given
+            const state = baseState()
+            state.triggerType = "schedule"
+            state.notify.slack = true
+
+            // When
+            const yaml = recipeToYaml(state, "system")
+
+            // Then
+            const parsed = flowYamlUtils.parse(yaml)
+            const slackTask = parsed.tasks.find((t: any) => t.id === "notify_slack")
+            expect(slackTask.payload).toContain("flow.id")
+        })
+
         it("generates schedule trigger with cron and timezone", () => {
             // Given
             const state = baseState()
@@ -147,6 +177,22 @@ describe("recipeToYaml", () => {
             expect(trigger.type).toBe("io.kestra.plugin.core.trigger.Schedule")
             expect(trigger.cron).toBe("0 8 * * 1")
             expect(trigger.timezone).toBe("America/New_York")
+        })
+
+        it("email uses webhookFqcn for non-execution trigger", () => {
+            // Given
+            const state = baseState()
+            state.triggerType = "schedule"
+            state.notify.email = true
+
+            // When
+            const yaml = recipeToYaml(state, "system")
+
+            // Then
+            const parsed = flowYamlUtils.parse(yaml)
+            const emailTask = parsed.tasks.find((t: any) => t.id === "notify_email")
+            expect(emailTask.type).toBe("io.kestra.plugin.email.MailSend")
+            expect(emailTask.htmlTextContent).not.toContain("trigger.executionId")
         })
     })
 
@@ -215,6 +261,39 @@ describe("recipeToYaml", () => {
         })
     })
 
+    describe("FQCN availability filtering", () => {
+        it("omits slack task when its FQCN is not in the available set", () => {
+            // Given
+            const state = baseState()
+            state.notify.slack = true
+            state.notify.email = true
+            const available = new Set(["io.kestra.plugin.email.MailSend"])
+
+            // When
+            const flowObj = recipeToFlowObject(state, "system", available)
+
+            // Then
+            const taskIds = (flowObj.tasks as any[]).map(t => t.id)
+            expect(taskIds).not.toContain("notify_slack")
+            expect(taskIds).toContain("notify_email")
+        })
+
+        it("includes all tasks when availableFqcns is empty (permissive mode)", () => {
+            // Given
+            const state = baseState()
+            state.notify.slack = true
+            state.notify.email = true
+
+            // When
+            const flowObj = recipeToFlowObject(state, "system", new Set())
+
+            // Then
+            const taskIds = (flowObj.tasks as any[]).map(t => t.id)
+            expect(taskIds).toContain("notify_slack")
+            expect(taskIds).toContain("notify_email")
+        })
+    })
+
     describe("round-trip stability", () => {
         it("parse(stringify(x)) produces the same content", () => {
             // Given
@@ -243,6 +322,18 @@ describe("recipeToYaml", () => {
             // Then
             const parsed = flowYamlUtils.parse(yaml)
             expect(parsed.namespace).toBe("custom-system")
+        })
+
+        it("uses SYSTEM_FLOW_RECIPE_ID as the flow id", () => {
+            // Given
+            const state = baseState()
+            state.notify.email = true
+
+            // When
+            const flowObj = recipeToFlowObject(state, "system")
+
+            // Then
+            expect(flowObj.id).toBe(SYSTEM_FLOW_RECIPE_ID)
         })
     })
 })

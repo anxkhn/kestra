@@ -2338,7 +2338,8 @@
         "email_sub": "发送电子邮件通知",
         "slack_channel_placeholder": "#alerts",
         "teams_webhook_placeholder": "Teams incoming webhook URL",
-        "email_to_placeholder": "recipient@your-domain.com"
+        "email_to_placeholder": "recipient@your-domain.com",
+        "plugin_unavailable": "插件未安装"
       },
       "summary": {
         "title": "摘要",

@@ -27,9 +27,9 @@
                 role="radio"
                 :aria-checked="recipe.otherTriggerType === trigger.type"
                 tabindex="0"
-                @click="selectTrigger(trigger.type)"
-                @keydown.enter="selectTrigger(trigger.type)"
-                @keydown.space.prevent="selectTrigger(trigger.type)"
+                @click="setOtherTriggerType(trigger.type)"
+                @keydown.enter="setOtherTriggerType(trigger.type)"
+                @keydown.space.prevent="setOtherTriggerType(trigger.type)"
             >
                 <KsTaskIcon :cls="trigger.type" :icons="pluginIcons" class="trigger-icon" />
                 <div class="trigger-info">
@@ -51,6 +51,7 @@
 
     const props = defineProps<{
         recipe: RecipeState
+        setOtherTriggerType: (type: string) => void
     }>()
 
     const pluginsStore = usePluginsStore()
@@ -66,10 +67,6 @@
             t => t.name.toLowerCase().includes(q) || t.type.toLowerCase().includes(q),
         )
     })
-
-    const selectTrigger = (type: string) => {
-        props.recipe.otherTriggerType = props.recipe.otherTriggerType === type ? "" : type
-    }
 
     onMounted(async () => {
         try {

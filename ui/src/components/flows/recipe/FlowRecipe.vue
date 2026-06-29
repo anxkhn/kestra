@@ -10,14 +10,14 @@
                 <div class="trigger-types" role="radiogroup" :aria-label="$t('recipe.when.trigger_type')" data-test="recipe-trigger-types">
                     <div
                         v-for="card in triggerCards"
-                        :key="card.type"
+                        :key="card.key"
                         class="trigger-card"
                         :class="{
-                            selected: recipe.triggerType === card.type,
+                            selected: recipe.triggerType === card.type && !card.disabled,
                             disabled: card.disabled,
                         }"
                         role="radio"
-                        :aria-checked="recipe.triggerType === card.type"
+                        :aria-checked="recipe.triggerType === card.type && !card.disabled"
                         :aria-disabled="card.disabled"
                         :tabindex="card.disabled ? -1 : 0"
                         @click="!card.disabled && selectTrigger(card.type)"
@@ -43,6 +43,7 @@
                         v-if="recipe.triggerType === 'execution'"
                         :recipe="recipe"
                         :namespaceOptions="namespaceOptions"
+                        :toggleState="toggleState"
                     />
                     <SchedulePanel
                         v-else-if="recipe.triggerType === 'schedule'"
@@ -56,6 +57,7 @@
                     <OtherPanel
                         v-else-if="recipe.triggerType === 'other'"
                         :recipe="recipe"
+                        :setOtherTriggerType="setOtherTriggerType"
                     />
                 </div>
 
@@ -64,7 +66,11 @@
                     <span class="section-sub">{{ $t("recipe.then.subtitle") }}</span>
                 </div>
 
-                <NotifyGrid :recipe="recipe" />
+                <NotifyGrid
+                    :recipe="recipe"
+                    :channelAvailability="channelAvailability"
+                    :toggleNotify="toggleNotify"
+                />
 
                 <KsAlert
                     v-if="hasInteracted && !hasNotifyChannel"
@@ -120,7 +126,7 @@
 
     const systemNamespace = computed(() => props.namespace ?? miscStore.configs?.systemNamespace ?? "system")
 
-    const {recipe, isValid, hasNotifyChannel, summary} = useFlowRecipe()
+    const {recipe, isValid, hasNotifyChannel, summary, channelAvailability, availableFqcns, toggleNotify, toggleState, setOtherTriggerType} = useFlowRecipe()
 
     const namespaceOptions = ref<string[]>([])
     const hasInteracted = ref(false)
@@ -140,7 +146,7 @@
 
     const yamlContent = computed(() => {
         try {
-            return recipeToYaml(recipe, systemNamespace.value)
+            return recipeToYaml(recipe, systemNamespace.value, availableFqcns.value)
         } catch {
             return ""
         }
@@ -148,6 +154,7 @@
 
     const triggerCards = computed(() => [
         {
+            key: "execution",
             type: "execution" as TriggerType,
             icon: "lightning-bolt",
             title: t("recipe.trigger.execution_title"),
@@ -155,6 +162,7 @@
             disabled: false,
         },
         {
+            key: "schedule",
             type: "schedule" as TriggerType,
             icon: "clock-outline",
             title: t("recipe.trigger.schedule_title"),
@@ -162,6 +170,7 @@
             disabled: false,
         },
         {
+            key: "case",
             type: "other" as TriggerType,
             icon: "folder-multiple-outline",
             title: t("recipe.trigger.case_title"),
@@ -169,6 +178,7 @@
             disabled: true,
         },
         {
+            key: "webhook",
             type: "webhook" as TriggerType,
             icon: "webhook",
             title: t("recipe.trigger.webhook_title"),
@@ -176,6 +186,7 @@
             disabled: false,
         },
         {
+            key: "other",
             type: "other" as TriggerType,
             icon: "dots-horizontal",
             title: t("recipe.trigger.other_title"),

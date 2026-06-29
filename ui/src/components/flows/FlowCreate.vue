@@ -29,6 +29,7 @@
     import resource from "../../models/resource"
     import action from "../../models/action"
     import {useOnboardingV2Store} from "../../stores/onboardingV2"
+    import {ONBOARDING_FLOW_PRESET_KEY, RECIPE_PRESET_KEY} from "../../utils/storageKeys"
 
     const route = useRoute()
     const {t} = useI18n()
@@ -38,8 +39,6 @@
     const authStore = useAuthStore()
     const onboardingV2Store = useOnboardingV2Store()
     const miscStore = useMiscStore()
-    const ONBOARDING_FLOW_PRESET_KEY = "kestra.onboarding.flowPreset"
-    const RECIPE_PRESET_KEY = "kestra.recipe.flowPreset"
 
     const defaultFlowTemplate = (id: string, namespace: string) => {
         const configuredTemplate = miscStore.configs?.flowTemplate

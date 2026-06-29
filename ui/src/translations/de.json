@@ -2338,7 +2338,8 @@
         "email_sub": "E-Mail-Benachrichtigung senden",
         "slack_channel_placeholder": "#alerts",
         "teams_webhook_placeholder": "Teams Incoming Webhook URL",
-        "email_to_placeholder": "empfaenger@ihre-domain.com"
+        "email_to_placeholder": "empfaenger@ihre-domain.com",
+        "plugin_unavailable": "Plugin nicht installiert"
       },
       "summary": {
         "title": "Zusammenfassung",
