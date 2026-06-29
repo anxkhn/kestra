@@ -8,7 +8,7 @@
                 data-test="import-yaml-back"
                 @click="emit('back')"
             >
-                <KsIcon name="arrow-left" />
+                <ArrowLeft :size="18" />
                 {{ $t("new_flow_landing.import.back") }}
             </KsButton>
             <KsText tag="h2" class="import-title">{{ $t("new_flow_landing.import.title") }}</KsText>
@@ -45,7 +45,7 @@
                 @change="handleFileChange"
             >
                 <KsButton type="default">
-                    <KsIcon name="tray-arrow-down" />
+                    <TrayArrowDown :size="18" />
                     {{ $t("new_flow_landing.import.upload_button") }}
                 </KsButton>
                 <template #tip>
@@ -71,6 +71,8 @@
     import {ref} from "vue"
     import {useI18n} from "vue-i18n"
     import {parseImportYaml} from "../../../utils/importYamlUtils"
+    import ArrowLeft from "vue-material-design-icons/ArrowLeft.vue"
+    import TrayArrowDown from "vue-material-design-icons/TrayArrowDown.vue"
 
     const emit = defineEmits<{
         submit: [{yaml: string}]

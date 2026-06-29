@@ -9,7 +9,7 @@
             <KsCard class="primary-card" shadow="never" data-test="blank-flow-card">
                 <div class="primary-card-header">
                     <div class="primary-icon">
-                        <KsIcon name="plus" />
+                        <Plus :size="22" />
                     </div>
                     <div>
                         <KsText tag="h2" class="card-title">{{ $t("new_flow_landing.blank.title") }}</KsText>
@@ -65,13 +65,13 @@
                     @keydown.space.prevent="browseBluprints"
                 >
                     <div class="secondary-card-icon">
-                        <KsIcon name="view-grid-outline" />
+                        <ViewGridOutline :size="20" />
                     </div>
                     <div class="secondary-card-body">
                         <KsText class="secondary-card-title">{{ $t("new_flow_landing.blueprints.title") }}</KsText>
                         <KsText class="secondary-card-sub">{{ $t("new_flow_landing.blueprints.subtitle") }}</KsText>
                     </div>
-                    <KsIcon name="chevron-right" class="secondary-card-arrow" />
+                    <ChevronRight :size="16" class="secondary-card-arrow" />
                 </KsCard>
 
                 <KsCard
@@ -85,7 +85,7 @@
                     @keydown.space.prevent="createSystemFlow"
                 >
                     <div class="secondary-card-icon">
-                        <KsIcon name="cog-outline" />
+                        <CogOutline :size="20" />
                     </div>
                     <div class="secondary-card-body">
                         <KsText class="secondary-card-title">
@@ -94,7 +94,7 @@
                         <KsText class="secondary-card-sub">{{ $t("new_flow_landing.system.subtitle") }}</KsText>
                     </div>
                     <KsTag size="small" class="system-badge">{{ $t("new_flow_landing.system.badge") }}</KsTag>
-                    <KsIcon name="chevron-right" class="secondary-card-arrow" />
+                    <ChevronRight :size="16" class="secondary-card-arrow" />
                 </KsCard>
 
                 <KsCard
@@ -108,13 +108,13 @@
                     @keydown.space.prevent="emit('import')"
                 >
                     <div class="secondary-card-icon">
-                        <KsIcon name="tray-arrow-down" />
+                        <TrayArrowDown :size="20" />
                     </div>
                     <div class="secondary-card-body">
                         <KsText class="secondary-card-title">{{ $t("new_flow_landing.import.title") }}</KsText>
                         <KsText class="secondary-card-sub">{{ $t("new_flow_landing.import.subtitle") }}</KsText>
                     </div>
-                    <KsIcon name="chevron-right" class="secondary-card-arrow" />
+                    <ChevronRight :size="16" class="secondary-card-arrow" />
                 </KsCard>
             </div>
         </div>
@@ -126,6 +126,11 @@
     import {useRouter, useRoute} from "vue-router"
     import {useMiscStore} from "override/stores/misc"
     import useNamespaces from "../../../composables/useNamespaces"
+    import Plus from "vue-material-design-icons/Plus.vue"
+    import ViewGridOutline from "vue-material-design-icons/ViewGridOutline.vue"
+    import CogOutline from "vue-material-design-icons/CogOutline.vue"
+    import TrayArrowDown from "vue-material-design-icons/TrayArrowDown.vue"
+    import ChevronRight from "vue-material-design-icons/ChevronRight.vue"
 
     const emit = defineEmits<{
         proceed: [{id: string; namespace: string}]
