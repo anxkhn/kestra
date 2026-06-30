@@ -62,6 +62,33 @@ jobs:
           TEST_FAILED=$(jq -r '.testFailed // ""' "$BODY")
           TEST_REPORT=$(jq -r '.testReport // ""' "$BODY")
 
+          # The flow always sets compileFailed to "true"/"false". An empty value
+          # means the Kestra flow terminated BEFORE producing a verdict (e.g. a
+          # transient Kubernetes pod-scheduling timeout, or a clone/auth error).
+          # That is inconclusive, NOT a pass — fail the check so it isn't a false
+          # green, and surface the raw response + status for debugging.
+          if [ "$COMPILE_FAILED" != "true" ] && [ "$COMPILE_FAILED" != "false" ]; then
+            {
+              echo "## :warning: EE CI inconclusive for \`$REF\`"
+              echo ""
+              echo "The Kestra flow did not return a compile verdict (HTTP $STATUS)."
+              echo "This is usually a transient infra error (e.g. a runner pod failed to schedule). Re-run the job."
+              echo ""
+              echo "<details><summary>Raw webhook response</summary>"
+              echo ""
+              echo '```json'
+              cat "$BODY"
+              echo '```'
+              echo ""
+              echo "</details>"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::group::Raw webhook response (HTTP $STATUS)"
+            cat "$BODY"
+            echo "::endgroup::"
+            echo "::error::EE CI inconclusive for ref $REF (no compile verdict; HTTP $STATUS). Likely a transient runner error — re-run the job."
+            exit 1
+          fi
+
           {
             echo "## EE CI result for \`$REF\`"
             echo ""
