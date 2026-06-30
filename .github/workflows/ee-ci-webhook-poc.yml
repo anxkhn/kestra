@@ -1,0 +1,107 @@
+name: EE CI via Kestra webhook (POC)
+
+# Proof-of-concept: run the EE compile/CI for this OSS PR's ref on a Kestra
+# instance and surface the result inline in the Actions log + job summary.
+# The webhook URL (including its key) lives in the KESTRA_CI_WEBHOOK_URL_POC
+# repo secret. The webhook runs synchronously (wait: true, returnOutputs: true)
+# and returns a flat JSON map: { compileFailed, compileError, testFailed, testReport }.
+
+on:
+  pull_request:
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, tag, or SHA to test"
+        required: false
+
+concurrency:
+  group: ee-ci-webhook-poc-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ee-ci:
+    name: EE compile/CI
+    runs-on: ubuntu-latest
+    if: github.repository == 'kestra-io/kestra'
+    steps:
+      - name: Trigger EE CI webhook and surface result
+        env:
+          WEBHOOK_URL: ${{ secrets.KESTRA_CI_WEBHOOK_URL_POC }}
+          REF: ${{ inputs.ref || github.head_ref || github.ref_name }}
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          if [ -z "${WEBHOOK_URL:-}" ]; then
+            echo "::error::KESTRA_CI_WEBHOOK_URL_POC secret is not set."
+            exit 1
+          fi
+
+          echo "Triggering EE CI for ref: $REF"
+          BODY=$(mktemp)
+          STATUS=$(curl -sS -o "$BODY" -w '%{http_code}' \
+            -X POST "$WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            --max-time 1800 \
+            -d "{\"ref\":\"${REF}\"}" || echo "000")
+
+          echo "Webhook HTTP status: $STATUS"
+
+          # The body must be JSON with our outputs even on HTTP 500 (a compile
+          # failure makes the flow terminate FAILED). A non-JSON body means an
+          # infra/auth error, not a compile result — surface it raw and fail.
+          if ! jq -e . "$BODY" >/dev/null 2>&1; then
+            echo "::error::Webhook did not return a JSON result (HTTP $STATUS). Raw response:"
+            cat "$BODY"
+            exit 1
+          fi
+
+          COMPILE_FAILED=$(jq -r '.compileFailed // ""' "$BODY")
+          COMPILE_ERROR=$(jq -r '.compileError // ""' "$BODY")
+          TEST_FAILED=$(jq -r '.testFailed // ""' "$BODY")
+          TEST_REPORT=$(jq -r '.testReport // ""' "$BODY")
+
+          {
+            echo "## EE CI result for \`$REF\`"
+            echo ""
+            if [ "$COMPILE_FAILED" = "true" ]; then
+              echo "### :x: EE compilation failed"
+              echo ""
+              echo '```'
+              echo "$COMPILE_ERROR"
+              echo '```'
+            else
+              echo "### :white_check_mark: EE compilation passed"
+            fi
+            if [ -n "$TEST_FAILED" ] || [ -n "$TEST_REPORT" ]; then
+              echo ""
+              if [ "$TEST_FAILED" = "true" ]; then
+                echo "### :x: EE tests failed"
+              else
+                echo "### :white_check_mark: EE tests passed"
+              fi
+              if [ -n "$TEST_REPORT" ]; then
+                echo ""
+                echo "$TEST_REPORT"
+              fi
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$COMPILE_FAILED" = "true" ]; then
+            echo "::group::EE compile error"
+            echo "$COMPILE_ERROR"
+            echo "::endgroup::"
+            echo "::error::EE compilation failed for ref $REF"
+            exit 1
+          fi
+
+          if [ "$TEST_FAILED" = "true" ]; then
+            echo "::group::EE test report"
+            echo "$TEST_REPORT"
+            echo "::endgroup::"
+            echo "::error::EE tests failed for ref $REF"
+            exit 1
+          fi
+
+          echo "EE CI passed for ref $REF"
