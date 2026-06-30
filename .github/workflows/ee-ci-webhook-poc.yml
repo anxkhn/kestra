@@ -14,6 +14,9 @@ on:
       ref:
         description: "Branch, tag, or SHA to test"
         required: false
+      test_filter:
+        description: "Optional Gradle --tests filter (e.g. 'io.kestra.ee.kv.KVPurgeCleanerTest' or '*KVPurge*'). When set, runs only matching EE tests; when empty, compile-only."
+        required: false
 
 concurrency:
   group: ee-ci-webhook-poc-${{ github.event.pull_request.number || github.ref }}
@@ -35,6 +38,9 @@ jobs:
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_REPO: ${{ github.repository }}
+          # Empty on pull_request (compile-only); set it from a manual run to
+          # execute a specific EE test.
+          TEST_FILTER: ${{ inputs.test_filter }}
         shell: bash
         run: |
           set -uo pipefail
@@ -48,11 +54,12 @@ jobs:
           # integrateWithGithub turns on the commit-status callback; the flow
           # gates the actual post on commit_sha being present too.
           PAYLOAD=$(jq -n \
-            --arg ref        "$REF" \
-            --arg commit_sha "${COMMIT_SHA:-}" \
-            --arg pr_number  "${PR_NUMBER:-}" \
-            --arg pr_repo    "${PR_REPO:-}" \
-            '{ref: $ref, commit_sha: $commit_sha, pr_number: $pr_number, pr_repo: $pr_repo, integrateWithGithub: true}')
+            --arg ref         "$REF" \
+            --arg commit_sha  "${COMMIT_SHA:-}" \
+            --arg pr_number   "${PR_NUMBER:-}" \
+            --arg pr_repo     "${PR_REPO:-}" \
+            --arg test_filter "${TEST_FILTER:-}" \
+            '{ref: $ref, commit_sha: $commit_sha, pr_number: $pr_number, pr_repo: $pr_repo, test_filter: $test_filter, integrateWithGithub: true}')
 
           BODY=$(mktemp)
           STATUS=$(curl -sS -o "$BODY" -w '%{http_code}' \
