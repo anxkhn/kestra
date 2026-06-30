@@ -29,6 +29,12 @@ jobs:
         env:
           WEBHOOK_URL: ${{ secrets.KESTRA_CI_WEBHOOK_URL_POC }}
           REF: ${{ inputs.ref || github.head_ref || github.ref_name }}
+          # On a pull_request these carry the OSS PR context so the flow can post
+          # the EE CI result back to the PR's head commit as a GitHub status.
+          # Empty on workflow_dispatch — the callback is gated on commit_sha.
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_REPO: ${{ github.repository }}
         shell: bash
         run: |
           set -uo pipefail
@@ -39,12 +45,21 @@ jobs:
           fi
 
           echo "Triggering EE CI for ref: $REF"
+          # integrateWithGithub turns on the commit-status callback; the flow
+          # gates the actual post on commit_sha being present too.
+          PAYLOAD=$(jq -n \
+            --arg ref        "$REF" \
+            --arg commit_sha "${COMMIT_SHA:-}" \
+            --arg pr_number  "${PR_NUMBER:-}" \
+            --arg pr_repo    "${PR_REPO:-}" \
+            '{ref: $ref, commit_sha: $commit_sha, pr_number: $pr_number, pr_repo: $pr_repo, integrateWithGithub: true}')
+
           BODY=$(mktemp)
           STATUS=$(curl -sS -o "$BODY" -w '%{http_code}' \
             -X POST "$WEBHOOK_URL" \
             -H 'Content-Type: application/json' \
             --max-time 1800 \
-            -d "{\"ref\":\"${REF}\"}" || echo "000")
+            -d "$PAYLOAD" || echo "000")
 
           echo "Webhook HTTP status: $STATUS"
 
